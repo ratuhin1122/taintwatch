@@ -1,0 +1,6 @@
+{
+  "name": "taintwatch-format-spike",
+  "version": "0.0.1",
+  "description": "Throwaway hook payload capture; asks before test tools.",
+  "author": {"name": "Taintwatch contributors"}
+}

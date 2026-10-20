@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "^(Read|WebFetch|Bash|mcp__.*)$",
+      "hooks": [{"type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hook-spike\"", "timeout": 5}]
+    }],
+    "PostToolUse": [{
+      "matcher": "^(Read|WebFetch|Bash|mcp__.*)$",
+      "hooks": [{"type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hook-spike\"", "timeout": 5}]
+    }]
+  }
+}
