@@ -19,6 +19,8 @@ lint:
 fuzz:
 	$(GO) test ./cmd/taintwatch -run='^$$' -fuzz=FuzzDispatcher -fuzztime=5s
 	$(GO) test ./internal/hookio -run='^$$' -fuzz=FuzzDecoder -fuzztime=5s
+	$(GO) test ./internal/state -run='^$$' -fuzz=FuzzSessionState -fuzztime=5s
+	$(GO) test ./internal/state -run='^$$' -fuzz=FuzzSanitizeSessionID -fuzztime=5s
 
 clean:
 	rm -rf build

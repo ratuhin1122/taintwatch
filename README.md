@@ -66,6 +66,8 @@ JSON in other packages. `Result.Write` returns exit 0 on success, even for deny,
 and an error with exit 1 on an output failure. The hook entry point will own failure
 policy and elapsed-time limits; these are not implemented by the current CLI stubs.
 
-Policy layering, self-protection, secure concurrent state, redacted audit logs,
+Secure session persistence is implemented in `internal/state`; see
+[state storage](docs/STATE.md) for paths, locking, expiration, and API behavior.
+The CLI does not yet use it. Policy layering, self-protection, redacted audit logs,
 and rule decisions remain future work. Default policy actions will ask; deny will
 require explicit policy. This repository is licensed under MIT.
