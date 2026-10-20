@@ -1,0 +1,2 @@
+# Golden comparisons use protocol LF newlines on every checkout.
+testdata/hookio/** text eol=lf

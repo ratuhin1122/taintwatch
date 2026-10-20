@@ -1,0 +1,10 @@
+{
+  "session_id": "documented-session",
+  "cwd": "/workspace/demo",
+  "transcript_path": "/home/example/.claude/projects/demo/session.jsonl",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {"command": "printf public-probe"},
+  "tool_use_id": "documented-tool-call"
+}

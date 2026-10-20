@@ -7,7 +7,9 @@ actions.
 
 **Current state: scaffold only. There is no security enforcement yet.**
 The hook payload spike remains isolated in its own Go module under `spike/`.
-Real payload confirmation and product `internal/hookio` structs are still pending.
+`internal/hookio` now decodes the documented input envelopes and writes verified
+structured outputs. Real payload confirmation and real-capture golden tests remain
+pending; tool-specific input and response schemas stay opaque JSON.
 
 ## Development
 
@@ -56,6 +58,13 @@ These are **CLI** exit codes. Claude Code interprets hook exit 2 as blocking;
 future hook adapters must map internal errors to the configured open/closed fail
 mode instead of forwarding CLI usage errors. No hook-format assumptions are added
 outside [the existing verification ledger](docs/ASSUMPTIONS.md).
+
+The `hookio` decoder accepts one object of at most 8 MiB, ignores unknown envelope
+fields, tolerates missing optional metadata, and preserves raw tool input/result
+JSON. Use its typed decoders and `Result` constructors instead of building hook
+JSON in other packages. `Result.Write` returns exit 0 on success, even for deny,
+and an error with exit 1 on an output failure. The hook entry point will own failure
+policy and elapsed-time limits; these are not implemented by the current CLI stubs.
 
 Policy layering, self-protection, secure concurrent state, redacted audit logs,
 and rule decisions remain future work. Default policy actions will ask; deny will

@@ -1,0 +1,11 @@
+{
+  "session_id": "documented-session",
+  "cwd": "/workspace/demo",
+  "transcript_path": "/home/example/.claude/projects/demo/session.jsonl",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Bash",
+  "tool_input": {"command": "printf public-probe"},
+  "tool_response": {"stdout": "public-probe", "stderr": "", "interrupted": false, "isImage": false},
+  "tool_use_id": "documented-tool-call",
+  "duration_ms": 12
+}

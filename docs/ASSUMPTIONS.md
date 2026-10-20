@@ -1,8 +1,12 @@
 # Claude Code format verification
 
 Checked 2026-10-21 against official documentation. **Verified means documented,
-not observed in a live session.** No real payloads have been supplied. This task
-creates documentation and a disposable spike only; `internal/hookio` is deferred.
+not observed in a live session.** No real payloads have been supplied. The initial
+verification task created documentation and a disposable spike. M1.2 now provides
+documented input envelopes and structured output in `internal/hookio`, following
+the user's explicit approval to implement from documentation while real captures
+remain pending. Real-session golden tests and compatibility verification are
+still outstanding.
 
 ## Sources read
 
@@ -119,13 +123,41 @@ Use the validator and installer rather than implementing a frozen copy of these 
 
 ## Payload gate and intended hookio boundary
 
-**unverified**: real payloads and exact Go structs. After the user confirms captures,
-propose concrete `CommonInput`, `PreToolUseInput`, `PostToolUseInput`,
-`UserPromptSubmitInput`, `SessionStartInput`, and output structs. Keep
-`tool_input`/`tool_response` as `json.RawMessage` at the boundary, with separately
-validated tool adapters where captures justify them; preserve unknown JSON for
-forward compatibility. This is a design intention, not a finalized schema.
-Do not create product Go structs before that review.
+**unverified**: real-session payloads and tool-specific result structs. During
+M1.2, the user explicitly approved implementing the documented envelope while
+leaving real captures pending. `internal/hookio` now defines `CommonInput`,
+`ToolEventInput`, `PreToolUseInput`, `PostToolUseInput`, `UserPromptSubmitInput`,
+and `SessionStartInput`; tool input/response remain `json.RawMessage`.
+No concrete Read/WebFetch/MCP result schema has been inferred from synthetic data.
+
+**verified (https://code.claude.com/docs/en/hooks#common-input-fields)**: optional
+`effort` is an object containing string `level`. **verified
+(https://code.claude.com/docs/en/hooks#pretooluse-input)**: optional `mcp_server`
+contains string `name` and `source`. Unknown level/source values remain strings,
+not closed enums.
+
+Decoder validation is a Taintwatch implementation choice, not a claim about
+required fields in every Claude Code version: require nonempty `session_id`,
+the expected `hook_event_name`, and, for tool events, nonempty `tool_name` plus an
+object `tool_input`. PostToolUse also requires the `tool_response` key, but accepts
+any JSON value including null. Other missing fields have zero values; optional
+metadata can be absent. Unknown envelope fields are ignored; unknown content
+inside raw tool JSON is retained. Empty prompt text and new session sources are
+accepted. No path sanitization or source trust is implied by successful decoding.
+
+The whole input, including whitespace, is capped at 8 MiB plus one byte to detect
+overflow. Exactly one JSON object is accepted. Reader errors are wrapped; malformed
+or oversized payloads return errors and no partially decoded event. A byte cap
+cannot bound elapsed time for a stalled `io.Reader`; hook entry points must also
+apply process/deadline controls. The CLI remains a stub and does not wire this
+package into a live session yet.
+
+`Result` constructors keep output JSON inside `internal/hookio`; all structured
+outputs, including deny, use exit 0. Its zero value emits `{}`. `Allow()` includes
+an empty string reason because it accepts no reason argument. Write failures return
+exit 1 and an error for the entry point's configurable failure handling. Output
+fixtures and documented-envelope examples in `testdata/hookio/` are explicitly
+documentation-derived. Real sanitized spike fixtures remain **unverified/pending**.
 
 Taintwatch is defense-in-depth, not a solution to prompt injection. Session-level
 taint is coarse; content detectors will be telemetry only. Hook-visible reads do

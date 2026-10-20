@@ -1,0 +1,7 @@
+{
+  "session_id": "documented-session",
+  "cwd": "/workspace/demo",
+  "transcript_path": "/home/example/.claude/projects/demo/session.jsonl",
+  "hook_event_name": "SessionStart",
+  "source": "startup"
+}
