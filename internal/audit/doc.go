@@ -1,3 +1,3 @@
-// Package audit will record concurrent hook decisions in a protected JSONL log.
-// Input summaries must be redacted rather than logging full secret values.
+// Package audit encodes redacted JSONL observations using state.Store's protected
+// atomic storage. Raw tool arguments and responses are omitted entirely.
 package audit

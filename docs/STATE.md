@@ -46,8 +46,8 @@ Each operation takes a session ID and returns a Session plus an error:
 
 Reasons must be 1..512 bytes. Approvals and clears require `who`; these strings
 are attribution supplied by the caller, not proof of authorization. Agent-driven
-clears must still require approval in the future hook/rule layer. No clear CLI or
-live hook integration is added by this task. JSON snapshots are limited to 16 MiB,
+clears must still require approval in the future pre-hook/rule layer. No clear CLI
+is exposed. M1.4 uses this store from the post hook. JSON snapshots are limited to 16 MiB,
 and oversized updates fail instead of producing unreadable state.
 
 ## Locking, durability, and cleanup
@@ -78,3 +78,7 @@ Cleanup scans the directory on every mutation and the store lock serializes
 different sessions. Latency and scaling are not yet measured. Session-level
 taint is coarse defense-in-depth, not a solution to prompt injection. Content
 detectors remain telemetry only and do not independently select blocking.
+
+`AppendAudit` also uses the persistent lock and atomic replacement to store compact
+JSONL records at `home/audit.jsonl`. Audit schema/redaction belongs to `internal/audit`.
+See TAINT.md for the current log cap and error behavior.

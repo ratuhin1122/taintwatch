@@ -24,7 +24,7 @@ func TestRun(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out, errOut bytes.Buffer
-			if code := run(tc.args, &out, &errOut); code != tc.code {
+			if code := run(tc.args, strings.NewReader(""), &out, &errOut); code != tc.code {
 				t.Fatalf("exit=%d, want %d", code, tc.code)
 			}
 			if out.String() != tc.stdout || !strings.Contains(errOut.String(), tc.stderr) {
@@ -41,16 +41,16 @@ func TestHelpAndStubs(t *testing.T) {
 			args := append(append([]string{}, command...), help)
 			t.Run(strings.Join(args, " "), func(t *testing.T) {
 				var out, errOut bytes.Buffer
-				if code := run(args, &out, &errOut); code != exitOK || !strings.Contains(out.String(), "Usage:") || errOut.Len() != 0 {
+				if code := run(args, strings.NewReader(""), &out, &errOut); code != exitOK || !strings.Contains(out.String(), "Usage:") || errOut.Len() != 0 {
 					t.Fatalf("exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 				}
 			})
 		}
-		if len(command) == 0 || command[0] == "version" || len(command) == 1 && command[0] == "hook" {
+		if len(command) == 0 || command[0] == "version" || len(command) == 1 && command[0] == "hook" || len(command) == 2 && command[0] == "hook" && command[1] == "post" {
 			continue
 		}
 		var out, errOut bytes.Buffer
-		if code := run(command, &out, &errOut); code != exitFailure || out.Len() != 0 || !strings.Contains(errOut.String(), "not implemented") {
+		if code := run(command, strings.NewReader(""), &out, &errOut); code != exitFailure || out.Len() != 0 || !strings.Contains(errOut.String(), "not implemented") {
 			t.Fatalf("%v: exit=%d stdout=%q stderr=%q", command, code, out.String(), errOut.String())
 		}
 	}
@@ -61,7 +61,7 @@ func FuzzDispatcher(f *testing.F) {
 	f.Add("version", "--help")
 	f.Fuzz(func(t *testing.T, command, arg string) {
 		var out, errOut bytes.Buffer
-		code := run([]string{command, arg}, &out, &errOut)
+		code := run([]string{command, arg}, strings.NewReader(""), &out, &errOut)
 		if code < exitOK || code > exitUsage {
 			t.Fatalf("unexpected exit %d", code)
 		}

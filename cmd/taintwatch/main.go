@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 )
 
 // version is set by the build's -ldflags; direct go builds use dev.
@@ -18,9 +19,21 @@ const (
 	exitUsage   = 2
 )
 
-func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
+func main() {
+	// Bound the entire command, including a stuck output pipe or filesystem call.
+	// This final watchdog cannot reliably emit context through a broken transport.
+	var watchdog *time.Timer
+	if len(os.Args) >= 3 && os.Args[1] == "hook" && os.Args[2] == "post" {
+		watchdog = time.AfterFunc(postTimeout+250*time.Millisecond, func() { os.Exit(exitOK) })
+	}
+	code := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
+	if watchdog != nil {
+		watchdog.Stop()
+	}
+	os.Exit(code)
+}
 
-func run(args []string, stdout, stderr io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
 		usage(stderr)
 		return exitUsage
@@ -36,7 +49,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	switch name {
 	case "hook":
-		return runHook(args[1:], stdout, stderr)
+		return runHook(args[1:], stdin, stdout, stderr)
 	case "explain", "status", "version":
 		fs := flag.NewFlagSet(name, flag.ContinueOnError)
 		fs.SetOutput(stderr)
@@ -66,15 +79,18 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 }
 
-func runHook(args []string, stdout, stderr io.Writer) int {
+func runHook(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
 		fmt.Fprintln(stdout, "Usage: taintwatch hook <pre|post|prompt|session-start> [--help]")
-		fmt.Fprintln(stdout, "Scaffold only: hook handlers do not yet read stdin or enforce policy.")
+		fmt.Fprintln(stdout, "Post records source taint; pre, prompt, and session-start are stubs.")
 		return exitOK
 	}
 	if len(args) == 0 {
 		fmt.Fprintln(stderr, "hook requires pre, post, prompt, or session-start")
 		return exitUsage
+	}
+	if args[0] == "post" {
+		return runPost(args[1:], stdin, stdout, stderr)
 	}
 	switch args[0] {
 	case "pre", "post", "prompt", "session-start":

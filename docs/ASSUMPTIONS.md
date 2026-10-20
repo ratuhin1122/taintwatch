@@ -34,6 +34,7 @@ still outstanding.
 | Bash result | **verified (https://code.claude.com/docs/en/hooks#posttooluse-decision-control)**: documented object example has `stdout`, `stderr`, `interrupted`, `isImage`. **unverified**: exhaustive shape and background/error variants on the installed version. |
 | MCP result | **unverified**: exact `tool_response` shape is tool-dependent; do not assume every hook receives a standard MCP `content` envelope. |
 | PostToolUse stdout | **verified (https://code.claude.com/docs/en/hooks#posttooluse-decision-control)**: `{}` abstains; context JSON below adds feedback. Top-level `decision:"block"` with `reason` annotates a completed result. Current docs also describe nested `updatedToolOutput` and MCP-only `updatedMCPToolOutput`; spike relies on neither. |
+| Reader argument subset | **verified (https://code.claude.com/docs/en/hooks#pretooluse-input)**: Bash `tool_input.command` and Read `tool_input.file_path` are strings. The PostToolUse reference identifies `tool_input` as the original arguments, so M1.4 extracts only those fields inside `hookio`. Read paths are documented absolute; the classifier also handles relative paths defensively. No result schema is added. |
 
 Exact PreToolUse stdout (one object only, no diagnostic text on stdout):
 
@@ -149,8 +150,9 @@ The whole input, including whitespace, is capped at 8 MiB plus one byte to detec
 overflow. Exactly one JSON object is accepted. Reader errors are wrapped; malformed
 or oversized payloads return errors and no partially decoded event. A byte cap
 cannot bound elapsed time for a stalled `io.Reader`; hook entry points must also
-apply process/deadline controls. The CLI remains a stub and does not wire this
-package into a live session yet.
+apply process/deadline controls. M1.4 wires the post command through this package
+and adds a process watchdog; other hook handlers remain stubs. No automatic plugin
+registration or real-session compatibility confirmation is implied.
 
 `Result` constructors keep output JSON inside `internal/hookio`; all structured
 outputs, including deny, use exit 0. Its zero value emits `{}`. `Allow()` includes
