@@ -1,0 +1,7 @@
+/build/
+/.local-tmp/
+/.go-cache/
+*.test
+*.prof
+/coverage.out
+.DS_Store

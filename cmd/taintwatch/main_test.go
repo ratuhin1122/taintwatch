@@ -1,0 +1,69 @@
+package main
+
+import (
+	"bytes"
+	"strings"
+	"testing"
+)
+
+func TestRun(t *testing.T) {
+	for _, tc := range []struct {
+		name           string
+		args           []string
+		code           int
+		stdout, stderr string
+	}{
+		{"missing", nil, exitUsage, "", "Usage:"},
+		{"unknown", []string{"wat"}, exitUsage, "", "unknown subcommand"},
+		{"version", []string{"version"}, exitOK, version + "\n", ""},
+		{"extra", []string{"version", "extra"}, exitUsage, "", "takes no arguments"},
+		{"bad flag", []string{"version", "--unknown"}, exitUsage, "", "flag provided but not defined"},
+		{"no hook", []string{"hook"}, exitUsage, "", "requires"},
+		{"bad hook", []string{"hook", "unknown"}, exitUsage, "", "unknown hook"},
+		{"extra hook argument", []string{"hook", "pre", "unexpected"}, exitUsage, "", "take no arguments"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var out, errOut bytes.Buffer
+			if code := run(tc.args, &out, &errOut); code != tc.code {
+				t.Fatalf("exit=%d, want %d", code, tc.code)
+			}
+			if out.String() != tc.stdout || !strings.Contains(errOut.String(), tc.stderr) {
+				t.Fatalf("stdout=%q stderr=%q", out.String(), errOut.String())
+			}
+		})
+	}
+}
+
+func TestHelpAndStubs(t *testing.T) {
+	commands := [][]string{{}, {"version"}, {"explain"}, {"status"}, {"hook"}, {"hook", "pre"}, {"hook", "post"}, {"hook", "prompt"}, {"hook", "session-start"}}
+	for _, command := range commands {
+		for _, help := range []string{"--help", "-h"} {
+			args := append(append([]string{}, command...), help)
+			t.Run(strings.Join(args, " "), func(t *testing.T) {
+				var out, errOut bytes.Buffer
+				if code := run(args, &out, &errOut); code != exitOK || !strings.Contains(out.String(), "Usage:") || errOut.Len() != 0 {
+					t.Fatalf("exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+				}
+			})
+		}
+		if len(command) == 0 || command[0] == "version" || len(command) == 1 && command[0] == "hook" {
+			continue
+		}
+		var out, errOut bytes.Buffer
+		if code := run(command, &out, &errOut); code != exitFailure || out.Len() != 0 || !strings.Contains(errOut.String(), "not implemented") {
+			t.Fatalf("%v: exit=%d stdout=%q stderr=%q", command, code, out.String(), errOut.String())
+		}
+	}
+}
+
+func FuzzDispatcher(f *testing.F) {
+	f.Add("hook", "pre")
+	f.Add("version", "--help")
+	f.Fuzz(func(t *testing.T, command, arg string) {
+		var out, errOut bytes.Buffer
+		code := run([]string{command, arg}, &out, &errOut)
+		if code < exitOK || code > exitUsage {
+			t.Fatalf("unexpected exit %d", code)
+		}
+	})
+}
