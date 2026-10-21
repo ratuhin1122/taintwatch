@@ -4,6 +4,18 @@
 short fuzz campaigns for the CLI dispatcher and hook input decoders. `make lint`
 checks vet and Go formatting. Hook golden outputs and documented-envelope input
 fixtures are documentation-derived; real capture goldens remain pending.
+On Linux/macOS, `make test` also runs `hookio.TestBinarySessionFlow`: it builds
+the actual command and checks the six-step M1 scenario using subprocess stdin,
+stdout, temporary state, persisted audit records, status and explain. Run just
+this test with `go test ./internal/hookio -run TestBinarySessionFlow -count=1 -v`.
+The matching human-readable demo is `bash scripts/demo.sh`.
+
+M1.7 local verification: Make build/race-test/lint targets passed on Windows;
+Unix-only E2E coverage was separately run in Ubuntu WSL against a fresh
+cross-compiled product executable using `TAINTWATCH_E2E_BINARY`. The demo also
+passed there using `TAINTWATCH_DEMO_BINARY`. WSL has no Go SDK, so that run used
+the prebuilt override; normal Linux/macOS CI builds inside the subprocess test.
+This verifies documented-envelope behavior, not live Claude Code payload delivery.
 State tests cover lifecycle operations, expiry, permissions, hostile IDs, symlinks,
 FIFOs, atomic readers, and concurrent goroutine/subprocess writers on macOS/Linux.
 `make fuzz` also exercises state JSON decoding and session ID sanitization.
