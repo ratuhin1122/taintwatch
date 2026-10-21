@@ -102,7 +102,7 @@ stdout. Hook latency is not yet measured; no <50 ms result is claimed.
 ## Minimal audit logging
 
 `home/audit.jsonl` is 0600 inside the 0700 state home. The state store's persistent
-lock serializes complete temp-file-plus-rename rewrites, including concurrent
+lock serializes single append writes and rotation, including concurrent
 processes. `internal/audit` owns the record schema and redaction; its JSON is not
 a Claude Code payload. Each valid observation records timestamp, sanitized session,
 tool, hook, `decision: allow` (completed call), rule, reason, tainted flag, source
@@ -118,7 +118,7 @@ State publication and audit publication are separate locked operations, not one
 transaction. State remains tainted if audit persistence subsequently fails. Known
 session errors attempt a `post.error` audit record; malformed/unattributed inputs,
 unavailable storage, timeouts, or failed log writes fall back to stderr diagnostics.
-Every append rewrites the log; it is capped at 16 MiB and refuses further appends
-instead of silently discarding history. Rotation, richer audit/explain behavior,
-and log-scaling work remain future tasks. Neither performance nor durability under
-every filesystem/power-failure scenario has been measured.
+Audit logs rotate at 10 MiB by default with three backups. `explain` and `status`
+inspect retained decisions and current taint; see [AUDIT.md](AUDIT.md) for options,
+redaction and retention semantics. Neither performance nor durability under every
+filesystem/power-failure scenario has been measured.

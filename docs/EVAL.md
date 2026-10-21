@@ -20,6 +20,12 @@ results or benchmark numbers have been measured yet.
 
 The throwaway spike has independent verification recorded in `spike/VERIFICATION.md`.
 
+M1.6 adds explain text goldens and JSON checks, CLI session selection/count tests,
+typed secret redaction checks, and Unix tests for redaction on disk, rotation,
+symlink rejection and concurrent append. `make build test lint VERSION=m1.6`
+passed on Windows with the native race detector; the state, audit, CLI and
+explanation binaries also passed in Ubuntu WSL without the race detector.
+
 M1.5 local verification (2026-10-21): `make build test lint VERSION=m1.5`
 passed using Windows Go 1.27/GCC, including the native race detector. Cross-compiled
 Linux test binaries for state, hooks, rules and audit passed in Ubuntu WSL; these

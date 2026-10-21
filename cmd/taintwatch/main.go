@@ -50,7 +50,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	switch name {
 	case "hook":
 		return runHook(args[1:], stdin, stdout, stderr)
-	case "explain", "status", "version":
+	case "explain", "status":
+		return runInspect(name, args[1:], stdout, stderr)
+	case "version":
 		fs := flag.NewFlagSet(name, flag.ContinueOnError)
 		fs.SetOutput(stderr)
 		fs.Usage = func() { fmt.Fprintf(fs.Output(), "Usage: taintwatch %s [--help]\n", name) }

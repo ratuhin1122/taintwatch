@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -77,19 +78,23 @@ type Session struct {
 // Options configures a store. Zero retention/lock timeout selects the defaults;
 // negative durations are invalid. Home overrides TAINTWATCH_HOME and XDG paths.
 type Options struct {
-	Home        string
-	Retention   time.Duration
-	LockTimeout time.Duration
+	AuditMaxBytes int64
+	AuditKeep     int
+	Home          string
+	Retention     time.Duration
+	LockTimeout   time.Duration
 }
 
 // Store serializes reads, read-modify-write operations, and cleanup through one
 // persistent advisory lock. A Store may be shared between goroutines.
 type Store struct {
-	home        string
-	sessions    string
-	retention   time.Duration
-	lockTimeout time.Duration
-	now         func() time.Time
+	auditMaxBytes int64
+	auditKeep     int
+	home          string
+	sessions      string
+	retention     time.Duration
+	lockTimeout   time.Duration
+	now           func() time.Time
 }
 
 // DefaultHome resolves TAINTWATCH_HOME, then XDG_STATE_HOME/taintwatch, then
@@ -112,6 +117,33 @@ func DefaultHome() (string, error) {
 // Parent directories are operator-controlled; managed directories must not be
 // symlinks. Advisory locking coordinates cooperating Taintwatch processes only.
 func New(opts Options) (*Store, error) {
+	if opts.AuditMaxBytes == 0 {
+		if v := os.Getenv("TAINTWATCH_AUDIT_MAX_BYTES"); v != "" {
+			n, e := strconv.ParseInt(v, 10, 64)
+			if e != nil || n <= 0 {
+				return nil, errors.New("invalid TAINTWATCH_AUDIT_MAX_BYTES")
+			}
+			opts.AuditMaxBytes = n
+		}
+	}
+	if opts.AuditKeep == 0 {
+		if v := os.Getenv("TAINTWATCH_AUDIT_KEEP"); v != "" {
+			n, e := strconv.Atoi(v)
+			if e != nil || n < 1 || n > 20 {
+				return nil, errors.New("invalid TAINTWATCH_AUDIT_KEEP")
+			}
+			opts.AuditKeep = n
+		}
+	}
+	if opts.AuditMaxBytes < 0 || opts.AuditKeep < 0 || opts.AuditKeep > 20 {
+		return nil, errors.New("invalid audit rotation options")
+	}
+	if opts.AuditMaxBytes == 0 {
+		opts.AuditMaxBytes = 10 << 20
+	}
+	if opts.AuditKeep == 0 {
+		opts.AuditKeep = 3
+	}
 	if opts.Retention < 0 || opts.LockTimeout < 0 {
 		return nil, errors.New("state retention and lock timeout must not be negative")
 	}
@@ -135,6 +167,8 @@ func New(opts Options) (*Store, error) {
 		opts.LockTimeout = DefaultLockTimeout
 	}
 	s := &Store{home: home, sessions: filepath.Join(home, "sessions"), retention: opts.Retention, lockTimeout: opts.LockTimeout, now: time.Now}
+	s.auditMaxBytes = opts.AuditMaxBytes
+	s.auditKeep = opts.AuditKeep
 	if err := secureDir(s.home); err != nil {
 		return nil, fmt.Errorf("prepare state home: %w", err)
 	}

@@ -46,7 +46,7 @@ func TestHelpAndStubs(t *testing.T) {
 				}
 			})
 		}
-		if len(command) == 0 || command[0] == "version" || len(command) == 1 && command[0] == "hook" || len(command) == 2 && command[0] == "hook" && (command[1] == "post" || command[1] == "pre") {
+		if len(command) == 0 || command[0] == "version" || command[0] == "explain" || command[0] == "status" || len(command) == 1 && command[0] == "hook" || len(command) == 2 && command[0] == "hook" && (command[1] == "post" || command[1] == "pre") {
 			continue
 		}
 		var out, errOut bytes.Buffer

@@ -79,6 +79,7 @@ different sessions. Latency and scaling are not yet measured. Session-level
 taint is coarse defense-in-depth, not a solution to prompt injection. Content
 detectors remain telemetry only and do not independently select blocking.
 
-`AppendAudit` also uses the persistent lock and atomic replacement to store compact
-JSONL records at `home/audit.jsonl`. Audit schema/redaction belongs to `internal/audit`.
-See TAINT.md for the current log cap and error behavior.
+`AppendAudit` uses the persistent lock and one append write per compact JSONL
+record at `home/audit.jsonl`; rotation renames whole files under the same lock.
+Audit schema/redaction belongs to `internal/audit`. See [AUDIT.md](AUDIT.md) for
+retention settings, inspection commands and failure behavior.

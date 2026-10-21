@@ -1,0 +1,14 @@
+Session example-session — 2 recent decision(s)
+
+2026-10-21 14:02:00 UTC — Asked for approval: Bash [TW002]
+Why: Destination example.com is outside the allowlist.
+Taint: yes; sources: web.
+Next: approve once in Claude Code if you trust this action.
+For repeated access, review allowing the exact destination domain when policy overrides are available.
+After reviewing the untrusted content, consider clearing taint; a clear CLI is not implemented yet.
+
+2026-10-21 14:01:00 UTC — No Taintwatch restriction: Read [default.allow]
+Why: No applicable built-in risk rule matched.
+Taint: no.
+
+Asks in retained history: 1 (older rotated records may have expired).

@@ -36,8 +36,8 @@ the latest stable Go. Hook latency is not yet measured.
 ```text
 taintwatch hook <pre|post|prompt|session-start> [--help]
 taintwatch hook post [--profile balanced|paranoid] [--fail-mode open|closed]
-taintwatch explain [--help]
-taintwatch status [--help]
+taintwatch explain [--session ID] [--last N] [--json]
+taintwatch status [--session ID]
 taintwatch version [--help]
 taintwatch --help
 ```
@@ -46,8 +46,9 @@ Each command and hook handler accepts `--help` or `-h`. `version` prints the bui
 version. `hook post` consumes stdin, tracks source taint, writes a minimal redacted
 audit record and emits factual additional context for untrusted sources. `hook pre`
 checks the built-in risk rules and returns ask for applicable actions; see
-[rule behavior](docs/RULES.md). Prompt/session-start, explain and status remain
-stubs. No hooks are installed automatically.
+[rule behavior](docs/RULES.md). Prompt/session-start remain stubs. `explain` and
+`status` inspect audit history and current state; see [audit logging](docs/AUDIT.md).
+No hooks are installed automatically.
 
 Exit codes:
 
@@ -74,6 +75,7 @@ Secure session persistence is implemented in `internal/state`; see
 [state storage](docs/STATE.md) for paths, locking, expiration, and API behavior.
 The post hook uses state and minimal redacted audit storage. See [source policy and
 post-hook behavior](docs/TAINT.md) for defaults, shell-matching gaps, audit limits,
-and error semantics. Policy layering and richer audit/explain features remain
-future work. Default policy actions ask; deny will
+and error semantics. Policy layering and approval/clear commands remain future
+work. Audit rotation and inspection are documented in [AUDIT.md](docs/AUDIT.md).
+Default policy actions ask; deny will
 require explicit policy. This repository is licensed under MIT.

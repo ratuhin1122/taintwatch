@@ -20,4 +20,5 @@
   aliases, HTTP redirects and DNS are not looked up. Unknown network destinations
   ask; package manifests and truncate targets receive conservative treatment.
 - Closed mode in PostToolUse is advisory only; a completed call cannot be undone.
-- Audit append currently rewrites a capped 16 MiB log; rotation is not implemented.
+- Audit rotation discards older history; ask counts cover retained logs only.
+  Redaction is best-effort; tool contents are omitted. See [AUDIT.md](AUDIT.md).
