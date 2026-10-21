@@ -20,7 +20,7 @@ func TestRun(t *testing.T) {
 		{"bad flag", []string{"version", "--unknown"}, exitUsage, "", "flag provided but not defined"},
 		{"no hook", []string{"hook"}, exitUsage, "", "requires"},
 		{"bad hook", []string{"hook", "unknown"}, exitUsage, "", "unknown hook"},
-		{"extra hook argument", []string{"hook", "pre", "unexpected"}, exitUsage, "", "take no arguments"},
+		{"extra hook argument", []string{"hook", "prompt", "unexpected"}, exitUsage, "", "take no arguments"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out, errOut bytes.Buffer
@@ -46,7 +46,7 @@ func TestHelpAndStubs(t *testing.T) {
 				}
 			})
 		}
-		if len(command) == 0 || command[0] == "version" || len(command) == 1 && command[0] == "hook" || len(command) == 2 && command[0] == "hook" && command[1] == "post" {
+		if len(command) == 0 || command[0] == "version" || len(command) == 1 && command[0] == "hook" || len(command) == 2 && command[0] == "hook" && (command[1] == "post" || command[1] == "pre") {
 			continue
 		}
 		var out, errOut bytes.Buffer

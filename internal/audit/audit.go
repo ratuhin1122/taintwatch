@@ -25,6 +25,7 @@ type Record struct {
 	TaintSources []string  `json:"taint_sources"`
 	InputSummary string    `json:"input_summary"`
 	FailMode     string    `json:"fail_mode"`
+	Evidence     []string  `json:"evidence,omitempty"`
 }
 
 // Sink abstracts secure storage so record construction can be tested separately.
@@ -66,6 +67,10 @@ func Write(sink Sink, record Record) error {
 		record.TaintSources[i] = Redact(record.TaintSources[i])
 	}
 	record.FailMode = Redact(record.FailMode)
+	record.Evidence = append([]string(nil), record.Evidence...)
+	for i := range record.Evidence {
+		record.Evidence[i] = Redact(record.Evidence[i])
+	}
 	b, err := json.Marshal(record)
 	if err != nil {
 		return fmt.Errorf("encode audit record: %w", err)

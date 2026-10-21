@@ -44,9 +44,10 @@ taintwatch --help
 
 Each command and hook handler accepts `--help` or `-h`. `version` prints the build
 version. `hook post` consumes stdin, tracks source taint, writes a minimal redacted
-audit record and emits factual additional context for untrusted sources. The other
-hook handlers, explain, and status are stubs that diagnose and exit 1. No hooks are
-installed automatically; this milestone does not yet gate risky actions.
+audit record and emits factual additional context for untrusted sources. `hook pre`
+checks the built-in risk rules and returns ask for applicable actions; see
+[rule behavior](docs/RULES.md). Prompt/session-start, explain and status remain
+stubs. No hooks are installed automatically.
 
 Exit codes:
 
@@ -73,6 +74,6 @@ Secure session persistence is implemented in `internal/state`; see
 [state storage](docs/STATE.md) for paths, locking, expiration, and API behavior.
 The post hook uses state and minimal redacted audit storage. See [source policy and
 post-hook behavior](docs/TAINT.md) for defaults, shell-matching gaps, audit limits,
-and error semantics. Policy layering, pre-hook self-protection, richer audit/explain
-features, and action rules remain future work. Default policy actions will ask; deny will
+and error semantics. Policy layering and richer audit/explain features remain
+future work. Default policy actions ask; deny will
 require explicit policy. This repository is licensed under MIT.

@@ -35,6 +35,7 @@ still outstanding.
 | MCP result | **unverified**: exact `tool_response` shape is tool-dependent; do not assume every hook receives a standard MCP `content` envelope. |
 | PostToolUse stdout | **verified (https://code.claude.com/docs/en/hooks#posttooluse-decision-control)**: `{}` abstains; context JSON below adds feedback. Top-level `decision:"block"` with `reason` annotates a completed result. Current docs also describe nested `updatedToolOutput` and MCP-only `updatedMCPToolOutput`; spike relies on neither. |
 | Reader argument subset | **verified (https://code.claude.com/docs/en/hooks#pretooluse-input)**: Bash `tool_input.command` and Read `tool_input.file_path` are strings. The PostToolUse reference identifies `tool_input` as the original arguments, so M1.4 extracts only those fields inside `hookio`. Read paths are documented absolute; the classifier also handles relative paths defensively. No result schema is added. |
+| Pre action arguments (M1.5) | **verified (https://code.claude.com/docs/en/hooks#pretooluse-input)**: Write and Edit use string `file_path`; WebFetch uses string `url`. Only this argument subset is decoded by pre rules. Real captures remain pending. |
 
 Exact PreToolUse stdout (one object only, no diagnostic text on stdout):
 

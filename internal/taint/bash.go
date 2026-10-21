@@ -4,17 +4,28 @@ import (
 	"errors"
 	"path"
 	"strings"
+
+	"github.com/ratuhin1122/taintwatch/internal/shellparse"
 )
 
 var errCommandTooLarge = errors.New("shell source scan exceeds 64 KiB")
 
-// commandWords is deliberately NOT a Bash parser. It recognizes literal words,
-// quoting, comments and simple command separators for provisional source tracking.
-// It does not expand variables, aliases, functions, eval, or nested shell scripts;
-// shellparse must replace this scanner before making stronger coverage claims.
+// commandWords uses Bash AST facts. On malformed input only, the legacy lexer
+// recovers unfinished literal reader prefixes; it never executes expansions.
 func commandWords(command string) ([][]string, error) {
 	if len(command) > 64<<10 {
 		return nil, errCommandTooLarge
+	}
+	parsed := shellparse.Parse(command)
+	if !parsed.Unparseable {
+		var commands [][]string
+		for _, c := range parsed.Commands {
+			commands = append(commands, append([]string{c.Name}, c.Args...))
+		}
+		if parsed.Uncertain {
+			return commands, errors.New("unresolved shell expansion")
+		}
+		return commands, nil
 	}
 	var commands [][]string
 	var words []string

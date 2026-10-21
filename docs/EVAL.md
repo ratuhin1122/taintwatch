@@ -10,9 +10,20 @@ FIFOs, atomic readers, and concurrent goroutine/subprocess writers on macOS/Linu
 Source tests cover MCP names/allowlists, reader prefixes, balanced/paranoid Reads,
 symlinks, symlink-before-`..` escapes, dependency aliases, and temporary paths.
 Post tests cover state/context/audit integration and successful exit on errors.
-`make fuzz` includes the provisional shell-word scanner; this does not establish
-full Bash parsing coverage. Source fixtures remain synthetic/documentation-derived.
+The rules matrix contains more than 80 source cases, each evaluated clean and
+tainted, including quoting, substitutions, wrappers, destination trust and dynamic
+commands. Pre integration tests cover state, audit, ask/abstention, fail modes and
+deadlines. `make fuzz` exercises Bash AST parsing as well as source classification.
+Fuzzing does not establish complete shell analysis. Source fixtures remain synthetic/documentation-derived.
 Attack and benign corpus directories are placeholders; no attack-containment
 results or benchmark numbers have been measured yet.
 
 The throwaway spike has independent verification recorded in `spike/VERIFICATION.md`.
+
+M1.5 local verification (2026-10-21): `make build test lint VERSION=m1.5`
+passed using Windows Go 1.27/GCC, including the native race detector. Cross-compiled
+Linux test binaries for state, hooks, rules and audit passed in Ubuntu WSL; these
+WSL runs did not use the race detector. Unix-only integration cases are skipped
+by native Windows tests. A five-second parser fuzz campaign passed. Linux race
+testing through Docker was unavailable because its API was unresponsive; the
+Ubuntu/macOS Go 1.22/stable CI matrix remains the platform verification path.

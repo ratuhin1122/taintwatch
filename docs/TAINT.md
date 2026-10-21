@@ -11,8 +11,8 @@ taintwatch hook post --profile paranoid --fail-mode closed
 ```
 
 No plugin hooks are installed automatically. Real payload confirmation remains
-pending as recorded in ASSUMPTIONS.md. PreToolUse is still a stub, so tracking
-taint does **not yet restrict subsequent tool actions**.
+pending as recorded in ASSUMPTIONS.md. PreToolUse now evaluates the built-in
+action rules described in [RULES.md](RULES.md).
 
 ## Built-in source policy
 
@@ -29,19 +29,20 @@ construction with layered policy loading; no YAML loader is introduced here.
 
 The default reader prefixes are `gh issue view`, `gh pr view`, `gh pr diff`,
 `gh api`, `curl`, and `wget`. `ReaderCommands` adds custom literal word prefixes.
-The provisional scanner recognizes ordinary quoting, comments, command separators,
-leading assignments, and simple `env`/`command`/`sudo` wrappers. Matching respects
+The Bash AST parser recognizes ordinary quoting, comments, command separators,
+leading assignments, substitutions, literal nested shell scripts and common
+`env`/`command`/`sudo`/`xargs`/`nohup`/`timeout` wrappers. Matching respects
 whole words, so `curling`, `gh pr difference`, and an echoed reader string do not
 match. It never runs commands or performs shell expansion. Incomplete quoting
 retains any recognized literal prefix but does not taint an unrelated command.
 Scans over 64 KiB return an internal error handled by the configured fail mode
 instead of allocating an unbounded command list.
 
-**This is not a Bash parser.** Variables, aliases, functions, wrapper flags,
-redirections before commands, nested shell scripts and quoted command substitution
-can evade reader recognition. `internal/shellparse` must replace it. Unknown tool
-types and other file-reading shell commands also remain outside current defaults;
-no complete source-coverage claim is made.
+Shell analysis is best-effort. A small legacy lexer is retained only for malformed
+shell input to recover an unfinished literal reader prefix. Variables, aliases,
+functions and unsupported wrapper forms can still evade source recognition.
+Unknown tools and other file-reading commands remain outside current defaults;
+no complete source-coverage claim is made. See [LIMITATIONS.md](LIMITATIONS.md).
 
 MCP exceptions match the full server segment in `mcp__<server>__<tool>`, including
 plugin scope such as `plugin_review_db`. A bare `db` does not exempt
@@ -90,7 +91,7 @@ PostToolUse `decision: block`. Default `open` errors produce a generic stderr
 diagnostic and abstain; known taint classifications can still supply their factual
 context when persistence fails. `closed` errors additionally supply advisory
 context requesting user confirmation. This is not an enforceable closed gate:
-PostToolUse has already run, and upcoming pre-hook enforcement is required to ask
+PostToolUse has already run, and pre-hook enforcement is required to ask
 before later actions. Closed cannot undo the completed tool call.
 
 A worker deadline is three seconds; the executable also has a final 3.25-second

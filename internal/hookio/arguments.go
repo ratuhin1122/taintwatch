@@ -10,11 +10,20 @@ import (
 type SourceArguments struct {
 	Command  string
 	FilePath string
+	URL      string
+}
+
+// Post provenance needs only reader arguments, not mutation or URL arguments.
+func (in PostToolUseInput) SourceArguments() (SourceArguments, error) {
+	if in.ToolName != "Bash" && in.ToolName != "Read" {
+		return SourceArguments{}, nil
+	}
+	return in.ToolEventInput.SourceArguments()
 }
 
 // SourceArguments extracts Bash command or Read file_path exclusively inside
 // hookio. Both fields are documented in the official hooks input reference.
-func (in PostToolUseInput) SourceArguments() (SourceArguments, error) {
+func (in ToolEventInput) SourceArguments() (SourceArguments, error) {
 	var args SourceArguments
 	switch in.ToolName {
 	case "Bash":
@@ -28,7 +37,7 @@ func (in PostToolUseInput) SourceArguments() (SourceArguments, error) {
 			return args, fmt.Errorf("%w: missing Bash command", ErrInvalidInput)
 		}
 		args.Command = *v.Command
-	case "Read":
+	case "Read", "Write", "Edit":
 		var v struct {
 			FilePath *string `json:"file_path"`
 		}
@@ -39,6 +48,17 @@ func (in PostToolUseInput) SourceArguments() (SourceArguments, error) {
 			return args, fmt.Errorf("%w: missing Read file_path", ErrInvalidInput)
 		}
 		args.FilePath = *v.FilePath
+	case "WebFetch":
+		var v struct {
+			URL *string `json:"url"`
+		}
+		if err := json.Unmarshal(in.ToolInput, &v); err != nil {
+			return args, err
+		}
+		if v.URL == nil || *v.URL == "" {
+			return args, fmt.Errorf("%w: missing WebFetch url", ErrInvalidInput)
+		}
+		args.URL = *v.URL
 	}
 	return args, nil
 }
