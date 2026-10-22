@@ -104,13 +104,15 @@ func TestLauncher(t *testing.T) {
 			if scenario == "bad-checksum" {
 				digest = strings.Repeat("0", 64)
 			}
-			fixture := filepath.Join(d, "fixture")
-			put(fixture, binary)
-			checks := filepath.Join(d, "checksums")
+			fixture := filepath.Join(d, "release", "v0.1.0")
+			if e := os.MkdirAll(fixture, 0700); e != nil {
+				t.Fatal(e)
+			}
+			put(filepath.Join(fixture, asset), binary)
+			checks := filepath.Join(fixture, "checksums.txt")
 			put(checks, digest+"  "+asset+"\n")
 			calls := filepath.Join(d, "calls")
 			put(filepath.Join(tools, "curl"), `#!/bin/sh
-printf 'call\n' >> "$CALLS"
 [ "$SCENARIO" != failed-download ] || exit 22
 previous=
 url=
@@ -119,7 +121,13 @@ for arg do
     case "$arg" in https:*) url=$arg;; esac
     previous=$arg
 done
-case "$url" in */checksums.txt) cat "$CHECKS" > "$output";; *) cat "$FIXTURE" > "$output";; esac
+printf '%s\n' "$url" >> "$CALLS"
+# No fallback/network: only the exact published URL and release filenames work.
+base=https://github.com/ratuhin1122/taintwatch/releases/download/v0.1.0
+case "$url" in
+    "$base/checksums.txt"|"$base/$ASSET") cat "$RELEASE_DIR/${url##*/}" > "$output" ;;
+    *) exit 22 ;;
+esac
 `)
 			if scenario == "bundled" {
 				put(filepath.Join(root, "bin", asset), binary)
@@ -135,7 +143,7 @@ case "$url" in */checksums.txt) cat "$CHECKS" > "$output";; *) cat "$FIXTURE" > 
 				if scenario == "hook-no-bootstrap" {
 					noBootstrap = "1"
 				}
-				cmd.Env = append(os.Environ(), "PATH="+tools, "HOME="+home, "CLAUDE_PLUGIN_ROOT="+root, "TAINTWATCH_HOME="+filepath.Join(d, "state"), "TAINTWATCH_FAIL_MODE=closed", "TAINTWATCH_NO_BOOTSTRAP="+noBootstrap, "CALLS="+calls, "CHECKS="+checks, "FIXTURE="+fixture, "SCENARIO="+scenario)
+				cmd.Env = append(os.Environ(), "PATH="+tools, "HOME="+home, "CLAUDE_PLUGIN_ROOT="+root, "TAINTWATCH_HOME="+filepath.Join(d, "state"), "TAINTWATCH_FAIL_MODE=closed", "TAINTWATCH_NO_BOOTSTRAP="+noBootstrap, "CALLS="+calls, "ASSET="+asset, "RELEASE_DIR="+fixture, "SCENARIO="+scenario)
 				b, e := cmd.Output()
 				if e != nil {
 					t.Fatalf("launcher %v: %s", e, b)
@@ -151,6 +159,20 @@ case "$url" in */checksums.txt) cat "$CHECKS" > "$output";; *) cat "$FIXTURE" > 
 				t.Fatal(got)
 			}
 			before, _ := os.ReadFile(calls)
+			if scenario == "download" || scenario == "bad-checksum" {
+				want := "https://github.com/ratuhin1122/taintwatch/releases/download/v0.1.0/checksums.txt\n" + "https://github.com/ratuhin1122/taintwatch/releases/download/v0.1.0/" + asset + "\n"
+				if string(before) != want {
+					t.Fatalf("unexpected release requests: %q", before)
+				}
+			}
+			if scenario == "bad-checksum" {
+				cache := filepath.Join(d, "state", "bootstrap", "0.1.0")
+				for _, name := range []string{asset, "verified"} {
+					if _, err := os.Stat(filepath.Join(cache, name)); !os.IsNotExist(err) {
+						t.Fatalf("unverified download was cached: %s (%v)", name, err)
+					}
+				}
+			}
 			if scenario == "hook-no-bootstrap" {
 				if len(before) != 0 {
 					t.Fatal("hook performed bootstrap network request")

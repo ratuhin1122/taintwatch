@@ -124,7 +124,7 @@ taintwatch install
 taintwatch doctor
 ```
 
-Restart Claude Code. Installation backs up existing settings, preserves unrelated hooks, and is idempotent. `taintwatch uninstall` removes its unchanged owned entries. Doctor validates local wiring and a synthetic scenario; it cannot prove live hook delivery. See [installation details](docs/install.md) and [command verification](docs/README-VERIFICATION.md).
+Restart Claude Code. Installation backs up existing settings, preserves unrelated hooks, and is idempotent. `taintwatch uninstall` removes its unchanged owned entries. Doctor validates local wiring and a synthetic scenario; it cannot prove live hook delivery. See [release assets and signature verification](docs/releases.md), [installation details](docs/install.md) and [command verification](docs/README-VERIFICATION.md).
 
 **Platforms:** Linux and macOS, amd64 and arm64. On Windows, run both Claude Code and Taintwatch inside WSL, with state on the Linux filesystem; native Windows state locking is unsupported. An exact minimum compatible Claude Code version has not been established; CLI validation was checked with 2.1.175, while real hook captures remain outstanding.
 

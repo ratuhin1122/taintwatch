@@ -1,0 +1,40 @@
+version: 2
+project_name: taintwatch
+builds:
+  - id: taintwatch
+    main: ./cmd/taintwatch
+    binary: taintwatch-{{ .Os }}-{{ .Arch }}
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+archives:
+  # Raw assets are required by the launcher; do not add a version suffix.
+  - id: launcher
+    ids: [taintwatch]
+    formats: [binary]
+    name_template: '{{ .Binary }}'
+  - id: archive
+    ids: [taintwatch]
+    formats: [tar.gz]
+    name_template: 'taintwatch_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    files: [LICENSE, README.md, CHANGELOG.md]
+sboms:
+  - id: archive-sbom
+    artifacts: archive
+    ids: [archive]
+    args: ['$artifact', '--output', 'spdx-json=$document']
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+changelog:
+  disable: true
+release:
+  github:
+    owner: ratuhin1122
+    name: taintwatch
+  prerelease: auto
+# Keyless signing is a mandatory separate workflow step before publication.
+# Local snapshots need neither credentials nor a Sigstore identity.

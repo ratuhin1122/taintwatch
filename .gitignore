@@ -5,3 +5,6 @@
 *.prof
 /coverage.out
 .DS_Store
+
+/dist/
+__pycache__/

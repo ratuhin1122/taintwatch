@@ -22,7 +22,7 @@ func TestPackaging(t *testing.T) {
 	if plugin.Name != "taintwatch" || plugin.Version == "" {
 		t.Fatal(plugin)
 	}
-	for _, file := range []string{"../../bin/taintwatch-launcher", "../../scripts/release-assets.sh"} {
+	for _, file := range []string{"../../bin/taintwatch-launcher"} {
 		b, e := os.ReadFile(file)
 		if e != nil || !strings.Contains(string(b), "version="+plugin.Version+"\n") {
 			t.Fatal("version mismatch", file, e)
