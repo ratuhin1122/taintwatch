@@ -247,3 +247,9 @@ Claude Code schema field.
 - Plugin command namespace: **verified (https://code.claude.com/docs/en/plugins)**. This repository's command is `/taintwatch:doctor`; execution in a live authenticated session remains **unverified**.
 - Local CLI test: Claude Code 2.1.175 accepted manifest validation and local marketplace registration; a staged local plugin installed enabled. The local directory must be `./`, not bare `.` with this CLI. These checks do not establish a minimum compatible version or live hook delivery.
 - Public repository exists; latest-release endpoint returned 404 on 2026-10-22. This is publication status, not a hook compatibility guarantee. See [README command verification](README-VERIFICATION.md).
+
+## M4.5 publishing verification — 2026-10-22
+
+- Manifest metadata fields and marketplace entry `category`/`tags`: **verified (https://code.claude.com/docs/en/plugins/marketplace-reference)** and validated using Claude Code 2.1.175. The marketplace name remains `ratuhin1122-plugins`; local validation does not prove global directory-name availability.
+- Current Anthropic community/directory route: **verified (https://code.claude.com/docs/en/plugins/publish#submit-to-anthropics-directory)** and **verified (https://claude.com/docs/plugins/submit)**: use `claude.ai/directory/manage`; the official marketplace does not take submissions through that portal. No submission, review outcome or name reservation is implied.
+- Portal eligibility/name availability and Taintwatch acceptance: **unverified**; no authenticated portal submission was made. The maintainer supplied exact GitHub About values in Part 3; description, website and all twenty topics were applied and API-readback verified on 2026-10-22. This is repository metadata, not directory acceptance. See [PUBLISHING.md](PUBLISHING.md).

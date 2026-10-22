@@ -1,12 +1,23 @@
 {
   "name": "ratuhin1122-plugins",
-  "description": "Security plugins maintained by ratuhin1122, including Taintwatch.",
-  "owner": {"name": "ratuhin1122"},
-  "plugins": [{
-    "name": "taintwatch",
-    "source": "./",
-    "description": "Taint tracking and confirmation prompts for sensitive Claude Code actions.",
-    "category": "security",
-    "tags": ["security", "guardrails", "mcp-security"]
-  }]
+  "description": "Independent security plugins maintained by ratuhin1122.",
+  "owner": {
+    "name": "ratuhin1122"
+  },
+  "plugins": [
+    {
+      "name": "taintwatch",
+      "source": "./",
+      "description": "A Claude Code plugin for action-based prompt injection defense using taint tracking, approval gates, and a local audit log.",
+      "category": "security",
+      "tags": [
+        "claude-code",
+        "prompt-injection",
+        "taint-tracking",
+        "mcp-security",
+        "secret-protection",
+        "audit-log"
+      ]
+    }
+  ]
 }

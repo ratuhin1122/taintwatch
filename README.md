@@ -62,6 +62,8 @@ Taintwatch remembers when untrusted content entered a session and asks before se
 
 ## How it works
 
+Taintwatch implements AI agent guardrails with taint tracking. Security checks implemented through Claude Code hooks only see tool calls routed through those hooks.
+
 ```mermaid
 flowchart LR
     S[Web / MCP / selected file and shell reads] --> T[Session taint]
@@ -90,7 +92,7 @@ In an interactive Claude Code session, use this repository's actual marketplace 
 /taintwatch:doctor
 ```
 
-The install command opens the plugin panel; complete its installation flow. The equivalent public marketplace CLI registration and install were tested with Claude Code 2.1.175 in an isolated configuration. These forms follow the [official marketplace documentation](https://code.claude.com/docs/en/plugin-marketplaces). **There is currently no release binary to download.** Build the binary first using the source path below and put it on PATH before enabling hooks. Hooks deliberately disable bootstrap downloads. Do not enable both plugin and standalone wiring.
+The install command opens the plugin panel; complete its installation flow. The equivalent public marketplace CLI registration and install were tested with Claude Code 2.1.175 in an isolated configuration. These forms follow the [official marketplace documentation](https://code.claude.com/docs/en/plugin-marketplaces). **There is currently no release binary to download.** Build the binary first using the source path below and put it on PATH before enabling hooks. Hooks deliberately disable bootstrap downloads. Review plugin source and hook commands before enabling them; marketplace discovery is not a security endorsement. Do not enable both plugin and standalone wiring.
 
 ### Source checkout: try a decision first
 
@@ -226,7 +228,7 @@ Taintwatch may not be the right fit if you need unconditional process isolation,
 
 ### How do I protect Claude Code from prompt injection?
 
-Keep native permissions and sandboxing enabled, and review requests that cross sensitive boundaries. Taintwatch adds session provenance and action checks, but neither it nor a detector guarantees that an injected instruction will be contained.
+Claude Code prompt injection protection needs several layers: native permissions, sandboxing, and review of requests that cross sensitive boundaries. Taintwatch adds session provenance and action checks, but neither it nor a detector guarantees that an injected instruction will be contained.
 
 ### What is indirect prompt injection in AI coding agents?
 
@@ -234,15 +236,15 @@ It is an instruction embedded in material the agent reads from another source, s
 
 ### How can I stop Claude Code from reading my .env file?
 
-Use Claude Code's native permission restrictions or an OS sandbox for unconditional protection. Taintwatch's default TW001 asks for secret reads only after session taint; a clean-session .env read is allowed by Taintwatch.
+To prevent Claude Code reading .env in every session, use native permission restrictions or an OS sandbox. Taintwatch's default TW001 asks for secret reads only after session taint; a clean-session .env read is allowed by Taintwatch.
 
 ### How do I stop Claude Code from sending my secrets to an unknown URL?
 
-Use network restrictions as the underlying boundary. After taint, Taintwatch asks for recognized egress to hosts outside its allowlist and selected secret reads; unknown shell behavior, allowed-host destinations and user approval can still permit leakage.
+To help stop Claude Code exfiltrating secrets, use network restrictions as the underlying boundary. After taint, Taintwatch asks for recognized egress to hosts outside its allowlist and selected secret reads; unknown shell behavior, allowed-host destinations and user approval can still permit leakage.
 
 ### Does this work with MCP servers?
 
-Results from `mcp__*` tools taint the session by default, with user-configurable trusted servers. Taintwatch checks subsequent recognized actions; it does not inspect arbitrary activity inside an MCP server, and live payload confirmation is still pending.
+MCP server prompt injection defense uses the same source-to-action model: results from `mcp__*` tools taint the session by default, with user-configurable trusted servers. Taintwatch checks subsequent recognized actions; it does not inspect arbitrary activity inside an MCP server, and live payload confirmation is still pending.
 
 ### Will it slow Claude Code down?
 
@@ -271,7 +273,7 @@ Planned directions, without delivery dates:
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), the [Code of Conduct](CODE_OF_CONDUCT.md), and [evaluation format](docs/EVAL.md). Include reproducible sanitized sequences, preserve honest failing expectations, and avoid submitting real credentials or copyrighted injection payloads.
+See [CONTRIBUTING.md](CONTRIBUTING.md), the [Code of Conduct](CODE_OF_CONDUCT.md), and [evaluation format](docs/EVAL.md). Include reproducible sanitized sequences, preserve honest failing expectations, and avoid submitting real credentials or copyrighted injection payloads. Release and directory preparation follow the [publishing checklist](docs/PUBLISHING.md).
 
 ## Security
 
@@ -283,6 +285,6 @@ Read [SECURITY.md](SECURITY.md) before reporting a vulnerability. The private re
 
 ## About
 
-Taintwatch is a Go Claude Code plugin that uses Claude Code hooks and taint tracking for action-based prompt injection defense. Its approach to AI coding agent security treats external content with zero trust: indirect prompt injection informs the threat model, while MCP security, conditional .env protection, and secret exfiltration prevention inform the rules. A local audit log explains those decisions and their limits.
+Taintwatch is a Claude Code security plugin written in Go, using Claude Code hooks and taint tracking for action-based prompt injection defense. Its approach to AI coding agent security treats external content with zero trust: indirect prompt injection informs the threat model, while MCP security, conditional .env protection, and secret exfiltration prevention inform the rules. A local audit log explains those decisions and their limits.
 
 Taintwatch is an independent open-source project and is not affiliated with or endorsed by Anthropic. 'Claude' and 'Claude Code' are trademarks of Anthropic.

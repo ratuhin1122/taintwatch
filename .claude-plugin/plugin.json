@@ -1,10 +1,26 @@
 {
   "name": "taintwatch",
   "version": "0.1.0",
-  "description": "Track untrusted tool content and ask before sensitive agent actions, with a redacted audit log.",
-  "author": {"name": "ratuhin1122"},
+  "description": "A Claude Code plugin for action-based prompt injection defense using taint tracking, approval gates, and a local audit log.",
+  "author": {
+    "name": "ratuhin1122"
+  },
   "homepage": "https://github.com/ratuhin1122/taintwatch",
   "repository": "https://github.com/ratuhin1122/taintwatch",
   "license": "MIT",
-  "keywords": ["claude-code", "prompt-injection", "taint-tracking", "ai-agent-security", "guardrails", "mcp-security", "secret-protection", "data-exfiltration", "audit-log"]
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "claude-code-hooks",
+    "prompt-injection",
+    "indirect-prompt-injection",
+    "taint-tracking",
+    "ai-agent-security",
+    "guardrails",
+    "mcp-security",
+    "secret-protection",
+    "data-exfiltration",
+    "audit-log",
+    "golang"
+  ]
 }
