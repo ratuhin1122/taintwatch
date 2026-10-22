@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"path"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -26,9 +27,9 @@ type Document struct{ changes []change }
 var schema = map[string][]string{
 	"":        {"version", "fail_mode", "profile", "allow_project_loosening", "sources", "egress", "secrets", "protected_writes", "rules", "log", "state"},
 	"sources": {"tools", "mcp", "bash", "read"}, "sources.mcp": {"trusted_servers"}, "sources.bash": {"reader_commands"}, "sources.read": {"taint_globs", "temp_paths", "downloaded_paths"},
-	"egress": {"allow_domains"}, "secrets": {"paths"}, "log": {"path", "rotation"}, "log.rotation": {"max_bytes", "keep"}, "state": {"retention_days"}, "rules": RuleIDs,
+	"egress": {"allow_domains"}, "secrets": {"paths", "allow_paths"}, "log": {"path", "rotation"}, "log.rotation": {"max_bytes", "keep"}, "state": {"retention_days"}, "rules": RuleIDs,
 }
-var listKeys = map[string]bool{"sources.tools": true, "sources.mcp.trusted_servers": true, "sources.bash.reader_commands": true, "sources.read.taint_globs": true, "sources.read.temp_paths": true, "sources.read.downloaded_paths": true, "egress.allow_domains": true, "secrets.paths": true, "protected_writes": true}
+var listKeys = map[string]bool{"sources.tools": true, "sources.mcp.trusted_servers": true, "sources.bash.reader_commands": true, "sources.read.taint_globs": true, "sources.read.temp_paths": true, "sources.read.downloaded_paths": true, "egress.allow_domains": true, "secrets.paths": true, "secrets.allow_paths": true, "protected_writes": true}
 
 func isList(k string) bool {
 	return listKeys[k] || strings.HasPrefix(k, "rules.") && strings.HasSuffix(k, ".extra_match")
@@ -249,6 +250,10 @@ func validateScalar(k string, n *yaml.Node) error {
 func validateItem(k string, n *yaml.Node) error {
 	v := n.Value
 	switch {
+	case k == "secrets.allow_paths":
+		if !filepath.IsAbs(v) || filepath.Clean(v) != v || strings.ContainsAny(v, "*?[]") {
+			return problem(n, "allow_paths requires exact clean absolute file paths, without globs")
+		}
 	case k == "egress.allow_domains":
 		if net.ParseIP(v) == nil {
 			if v != strings.ToLower(v) || strings.ContainsAny(v, "/:@*?[] ") || strings.HasPrefix(v, ".") || strings.HasSuffix(v, ".") {

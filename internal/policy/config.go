@@ -16,7 +16,8 @@ type Config struct {
 		AllowDomains []string `yaml:"allow_domains"`
 	} `yaml:"egress"`
 	Secrets struct {
-		Paths []string `yaml:"paths"`
+		Paths      []string `yaml:"paths"`
+		AllowPaths []string `yaml:"allow_paths"`
 	} `yaml:"secrets"`
 	ProtectedWrites []string        `yaml:"protected_writes"`
 	Rules           map[string]Rule `yaml:"rules"`
@@ -70,6 +71,7 @@ func Defaults() Config {
 	}
 	c.Egress.AllowDomains = strings.Fields("github.com api.github.com raw.githubusercontent.com objects.githubusercontent.com registry.npmjs.org pypi.org files.pythonhosted.org proxy.golang.org sum.golang.org")
 	c.Secrets.Paths = []string{".env*", "*.pem", "*.key", "**/.ssh/**", "**/.aws/**", "**/.config/gcloud/**", "**/.kube/config", ".npmrc", ".pypirc", ".netrc", ".git-credentials", "id_rsa*", "**/.docker/config.json", "*.tfstate", "*_history", ".history"}
+	c.Secrets.AllowPaths = []string{}
 	c.ProtectedWrites = []string{"**/.claude/**", ".mcp.json", "CLAUDE.md", "**/.github/workflows/**", "**/.git/hooks/**", ".bashrc", ".bash_profile", ".profile", ".zshrc", ".zprofile", "package.json", "**/.ssh/**", "**/.aws/**"}
 	c.Rules = map[string]Rule{}
 	for _, id := range RuleIDs {

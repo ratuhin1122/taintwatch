@@ -297,7 +297,7 @@ func PluginWired(root string) bool {
 		return false
 	}
 	for event, mode := range map[string]string{"PreToolUse": "pre", "PostToolUse": "post"} {
-		want := map[string]any{"matcher": "*", "hooks": []any{map[string]any{"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher\" hook " + mode}}}
+		want := map[string]any{"matcher": "*", "hooks": []any{map[string]any{"type": "command", "command": "TAINTWATCH_NO_BOOTSTRAP=1 sh \"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher\" hook " + mode}}}
 		found := false
 		groups, _ := h[event].([]any)
 		for _, group := range groups {

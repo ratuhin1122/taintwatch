@@ -52,6 +52,9 @@ if [ -f "$cache/verified" ] && [ -x "$cache/$asset" ]; then
     if [ "$actual" = "$expected" ]; then exec "$cache/$asset" "$@"; fi
     fail "$@"
 fi
+# Hook wiring disables download bootstrap so network waits cannot precede the
+# Go hook's context deadline. Bootstrap explicitly with `version` beforehand.
+[ "${TAINTWATCH_NO_BOOTSTRAP:-0}" != 1 ] || fail "$@"
 mkdir -- "$cache/attempted" 2>/dev/null || fail "$@"
 command -v curl >/dev/null 2>&1 || fail "$@"
 base=https://github.com/ratuhin1122/taintwatch/releases/download/v$version

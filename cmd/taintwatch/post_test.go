@@ -159,9 +159,9 @@ func TestPostDeadlineAndOutputFailure(t *testing.T) {
 	returned := make(chan struct{})
 	var out, errOut bytes.Buffer
 	start := time.Now()
-	code := runPostWithin(nil, blockedPostReader{release, returned}, &out, &errOut, 20*time.Millisecond)
+	code := runPostWithin(nil, blockedPostReader{release, returned}, &out, &errOut, 250*time.Millisecond)
 	close(release)
-	<-returned
+	// Cancellation may prevent Read from being called; it need not signal returned.
 	if code != 0 || time.Since(start) > 2*time.Second || !strings.Contains(errOut.String(), "deadline") {
 		t.Fatalf("code=%d elapsed=%v stderr=%s", code, time.Since(start), errOut.String())
 	}

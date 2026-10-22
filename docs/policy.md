@@ -7,6 +7,12 @@ stacked. Hooks use the hook envelope's cwd; inspection and policy commands use
 the process cwd. Missing files leave the previous layer intact. The user path
 is the stated home-directory path; `XDG_CONFIG_HOME` does not relocate it.
 
+`allow domain/path` and `disallow domain/path` preview changes to the user layer
+and require terminal confirmation or explicit `--yes`; see
+[approvals.md](approvals.md). `secrets.allow_paths` is a list of exact canonical
+absolute file names exempt only from TW001 reads. It defaults empty. Its lists
+use the same `replace`/`append` syntax, and project additions count as loosening.
+
 ```sh
 taintwatch policy check ./candidate.yaml  # validate this document only
 taintwatch policy check                   # validate discovered layers and merge
@@ -56,6 +62,8 @@ egress:
 secrets:
   paths:
     append: ['*.secret', '**/credentials/**']
+  allow_paths:
+    replace: []  # Exact absolute canonical files exempt only from TW001 reads.
 protected_writes:
   append: ['**/deploy/**']
 

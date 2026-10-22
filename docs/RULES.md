@@ -39,8 +39,12 @@ shell file-operand extractors are conservative candidates, not syscall tracing.
 Errors default to open (diagnostic and `{}`). Closed errors return ask. A known
 risk decision is retained if auditing fails. Input, filesystem and output failures
 can prevent durable audit records; diagnostics are the fallback. A worker deadline
-is three seconds and the process watchdog is 3.25 seconds. A broken output pipe
-or final watchdog exit cannot reliably transmit a closed-mode ask. Performance
+uses a 1.8-second context budget (1.35 seconds for evaluation, the remainder for
+output); the process watchdog is two seconds. A broken output pipe cannot
+reliably transmit an ask: closed pre-hooks use the documented blocking exit 2
+as a last resort, while open pre-hooks and all post-hooks exit 0. Until policy
+loading establishes a mode, timeout handling is conservative (closed), unless
+an explicit `--fail-mode open` was supplied. Performance
 has not been benchmarked against the under-50-ms target.
 
 See [LIMITATIONS.md](LIMITATIONS.md). Real Claude Code payload captures remain pending.

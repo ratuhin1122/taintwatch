@@ -60,6 +60,10 @@ func FuzzDispatcher(f *testing.F) {
 	f.Add("hook", "pre")
 	f.Add("version", "--help")
 	f.Fuzz(func(t *testing.T, command, arg string) {
+		switch command {
+		case "allow", "disallow", "clear", "install", "uninstall":
+			return
+		} // Never mutate operator files during fuzzing.
 		var out, errOut bytes.Buffer
 		code := run([]string{command, arg}, strings.NewReader(""), &out, &errOut)
 		if code < exitOK || code > exitUsage {

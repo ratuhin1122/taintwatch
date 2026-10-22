@@ -12,12 +12,55 @@ import (
 	"testing"
 )
 
+func TestLauncherFailureModes(t *testing.T) {
+	launcher, e := filepath.Abs("../../bin/taintwatch-launcher")
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, kind := range []string{"pre", "post"} {
+		for _, mode := range []string{"open", "closed"} {
+			t.Run(kind+mode, func(t *testing.T) {
+				dir := t.TempDir()
+				tools := filepath.Join(dir, "tools")
+				if e := os.Mkdir(tools, 0700); e != nil {
+					t.Fatal(e)
+				}
+				for _, name := range []string{"uname", "mkdir", "dirname", "chmod"} {
+					target, e := exec.LookPath(name)
+					if e != nil {
+						t.Fatal(e)
+					}
+					if e = os.Symlink(target, filepath.Join(tools, name)); e != nil {
+						t.Fatal(e)
+					}
+				}
+				cmd := exec.Command("/bin/sh", launcher, "hook", kind)
+				cmd.Dir = dir
+				cmd.Env = append(os.Environ(), "PATH="+tools, "HOME="+dir, "CLAUDE_PLUGIN_ROOT="+dir, "TAINTWATCH_HOME="+filepath.Join(dir, "state"), "TAINTWATCH_NO_BOOTSTRAP=1", "TAINTWATCH_FAIL_MODE="+mode)
+				b, e := cmd.Output()
+				if e != nil {
+					t.Fatal(e)
+				}
+				if mode == "open" && len(b) != 0 {
+					t.Fatal(string(b))
+				}
+				if mode == "closed" && !strings.Contains(string(b), map[string]string{"pre": "permissionDecision", "post": "additionalContext"}[kind]) {
+					t.Fatal(string(b))
+				}
+				if kind == "post" && strings.Contains(string(b), "permissionDecision") {
+					t.Fatal(string(b))
+				}
+			})
+		}
+	}
+}
+
 func TestLauncher(t *testing.T) {
 	launcher, e := filepath.Abs("../../bin/taintwatch-launcher")
 	if e != nil {
 		t.Fatal(e)
 	}
-	for _, scenario := range []string{"bundled", "path", "download", "bad-checksum", "failed-download"} {
+	for _, scenario := range []string{"bundled", "path", "download", "bad-checksum", "failed-download", "hook-no-bootstrap"} {
 		t.Run(scenario, func(t *testing.T) {
 			d := t.TempDir()
 			root := filepath.Join(d, "plugin")
@@ -88,7 +131,11 @@ case "$url" in */checksums.txt) cat "$CHECKS" > "$output";; *) cat "$FIXTURE" > 
 				t.Helper()
 				cmd := exec.Command("/bin/sh", launcher, "hook", "pre")
 				cmd.Dir = home
-				cmd.Env = append(os.Environ(), "PATH="+tools, "HOME="+home, "CLAUDE_PLUGIN_ROOT="+root, "TAINTWATCH_HOME="+filepath.Join(d, "state"), "TAINTWATCH_FAIL_MODE=closed", "CALLS="+calls, "CHECKS="+checks, "FIXTURE="+fixture, "SCENARIO="+scenario)
+				noBootstrap := "0"
+				if scenario == "hook-no-bootstrap" {
+					noBootstrap = "1"
+				}
+				cmd.Env = append(os.Environ(), "PATH="+tools, "HOME="+home, "CLAUDE_PLUGIN_ROOT="+root, "TAINTWATCH_HOME="+filepath.Join(d, "state"), "TAINTWATCH_FAIL_MODE=closed", "TAINTWATCH_NO_BOOTSTRAP="+noBootstrap, "CALLS="+calls, "CHECKS="+checks, "FIXTURE="+fixture, "SCENARIO="+scenario)
 				b, e := cmd.Output()
 				if e != nil {
 					t.Fatalf("launcher %v: %s", e, b)
@@ -104,6 +151,14 @@ case "$url" in */checksums.txt) cat "$CHECKS" > "$output";; *) cat "$FIXTURE" > 
 				t.Fatal(got)
 			}
 			before, _ := os.ReadFile(calls)
+			if scenario == "hook-no-bootstrap" {
+				if len(before) != 0 {
+					t.Fatal("hook performed bootstrap network request")
+				}
+				if _, e := os.Stat(filepath.Join(d, "state", "bootstrap", "0.1.0", "attempted")); !os.IsNotExist(e) {
+					t.Fatal("hook consumed manual bootstrap attempt", e)
+				}
+			}
 			if scenario == "download" { // cached executable is rechecked before every execution
 				cache := filepath.Join(d, "state", "bootstrap", "0.1.0", asset)
 				put(cache, "#!/bin/sh\necho UNVERIFIED\n")

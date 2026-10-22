@@ -28,6 +28,7 @@ type Decision struct {
 }
 type Policy struct {
 	Secrets, ProtectedWrites, SelfPaths []string
+	AllowedPaths                        []string
 	Overrides                           map[string]policy.Rule
 	AllowedHosts                        []string
 	StateHome                           string
@@ -38,7 +39,7 @@ func DefaultPolicy() Policy {
 	return FromPolicy(policy.Defaults())
 }
 func FromPolicy(c policy.Config) Policy {
-	return Policy{AllowedHosts: append([]string{}, c.Egress.AllowDomains...), Secrets: append([]string{}, c.Secrets.Paths...), ProtectedWrites: append([]string{}, c.ProtectedWrites...), Overrides: c.Rules}
+	return Policy{AllowedHosts: append([]string{}, c.Egress.AllowDomains...), AllowedPaths: append([]string{}, c.Secrets.AllowPaths...), Secrets: append([]string{}, c.Secrets.Paths...), ProtectedWrites: append([]string{}, c.ProtectedWrites...), Overrides: c.Rules}
 }
 
 type Input struct {
@@ -172,6 +173,25 @@ func secret(in Input) []string {
 		patterns = policy.Defaults().Secrets.Paths
 	}
 	for _, p := range paths(in, false) {
+		// Require the actual resolved file to match the approved canonical name.
+		// Missing/unresolvable files and symlinks retargeted later get no exception.
+		raw := p
+		if !filepath.IsAbs(raw) {
+			raw = in.CWD + string(os.PathSeparator) + raw
+		}
+		resolved, err := filepath.EvalSymlinks(raw)
+		allowed := false
+		if err == nil {
+			for _, approved := range in.Policy.AllowedPaths {
+				if filepath.Clean(resolved) == approved {
+					allowed = true
+					break
+				}
+			}
+		}
+		if allowed {
+			continue
+		}
 		for _, v := range variants(in, p) {
 			for _, pattern := range patterns {
 				if policy.MatchPath(pattern, v) {
@@ -233,11 +253,18 @@ func self(in Input) []string {
 		}
 	}
 	for _, c := range in.Shell.Commands {
-		if c.Name == "taintwatch" || c.Name == "taintwatch.exe" {
+		if c.Name == "sh" || c.Name == "bash" || c.Name == "dash" || c.Name == "zsh" {
+			a := nonflags(c.Args)
+			if len(a) > 0 && path.Base(a[0]) == "taintwatch-launcher" {
+				c.Name = "taintwatch-launcher"
+				c.Args = a[1:]
+			}
+		}
+		if c.Name == "taintwatch" || c.Name == "taintwatch.exe" || c.Name == "taintwatch-launcher" || strings.HasPrefix(c.Name, "taintwatch-linux-") || strings.HasPrefix(c.Name, "taintwatch-darwin-") {
 			if len(c.Args) >= 2 && c.Args[0] == "policy" && contains(c.Args[1], "check", "show") {
 				continue
 			}
-			if len(c.Args) == 0 || !contains(c.Args[0], "version", "status", "explain", "--help", "-h") {
+			if len(c.Args) == 0 || !contains(c.Args[0], "version", "status", "explain", "doctor", "--help", "-h") {
 				return []string{"mutating taintwatch command"}
 			}
 		}

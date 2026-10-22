@@ -293,8 +293,8 @@ func (s *Store) AddApproval(id string, approval Approval) (Session, error) {
 }
 
 // Clear resets taint, events, and approvals while retaining creation time and
-// attribution for the latest clear. Authorization belongs to the future caller;
-// no CLI clear command is exposed by this package.
+// attribution for the latest clear. Authorization belongs to the caller;
+// the CLI clear command is protected by TW006 when invoked through Claude Bash.
 func (s *Store) Clear(id, reason, who string) (Session, error) {
 	return s.update(id, func(session *Session, now time.Time) error {
 		if who == "" {

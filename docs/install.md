@@ -51,6 +51,10 @@ every execution. Bad checksums never execute. Downloading each file is bounded
 to 15 seconds (3 second connect timeout). Preinstall a local binary for offline,
 fast hook startup; bootstrap may exceed Claude's hook timeout. It is better to
 bootstrap explicitly with `sh bin/taintwatch-launcher version` before a session.
+Product hook wiring sets `TAINTWATCH_NO_BOOTSTRAP=1`: hooks use local/PATH/verified
+cached binaries or apply the failure fallback immediately, without downloading.
+This keeps first-run network waits outside the Go hook's deadline. Explicit
+launcher commands can perform the one allowed bootstrap attempt beforehand.
 After fixing a failed download, explicitly remove only the version's
 `attempted/` directory to authorize another first-run attempt, or install a
 local binary. Failed cache validation requires inspecting/removing the cached

@@ -24,7 +24,14 @@ func main() {
 	// This final watchdog cannot reliably emit context through a broken transport.
 	var watchdog *time.Timer
 	if len(os.Args) >= 3 && os.Args[1] == "hook" && (os.Args[2] == "post" || os.Args[2] == "pre") {
-		watchdog = time.AfterFunc(postTimeout+250*time.Millisecond, func() { os.Exit(exitOK) })
+		watchdogClosed.Store(initialClosed(os.Args[3:]))
+		pre := os.Args[2] == "pre"
+		watchdog = time.AfterFunc(hookHardTimeout, func() {
+			if pre && watchdogClosed.Load() {
+				os.Exit(2)
+			}
+			os.Exit(exitOK)
+		})
 	}
 	code := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
 	if watchdog != nil {
@@ -48,6 +55,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return exitOK
 	}
 	switch name {
+	case "allow", "disallow":
+		return runAllow(name, args[1:], stdin, stdout, stderr)
+	case "clear":
+		return runClear(args[1:], stdout, stderr)
 	case "install", "uninstall", "doctor":
 		return runInstallation(name, args[1:], stdout, stderr)
 	case "hook":
@@ -122,6 +133,6 @@ func runHook(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 func usage(w io.Writer) {
 	fmt.Fprintln(w, "Usage: taintwatch <command> [--help]")
-	fmt.Fprintln(w, "Commands: hook <pre|post|prompt|session-start>, policy <check|show>, explain, status, version, install, uninstall, doctor")
+	fmt.Fprintln(w, "Commands: hook <pre|post|prompt|session-start>, policy <check|show>, explain, status, version, install, uninstall, doctor, allow, disallow, clear")
 	fmt.Fprintln(w, "Exit codes: 0 success/help; 1 unavailable or failed operation; 2 invalid CLI usage.")
 }

@@ -4,8 +4,8 @@ Session example-session — 2 recent decision(s)
 Why: Destination example.com is outside the allowlist.
 Taint: yes; sources: web.
 Next: approve once in Claude Code if you trust this action.
-For repeated access, review egress.allow_domains and validate changes with taintwatch policy check.
-After reviewing the untrusted content, consider clearing taint; a clear CLI is not implemented yet.
+For repeated access, review a permanent exception with taintwatch allow domain HOST.
+After reviewing the untrusted content, explicitly clear with taintwatch clear --session ID --reason TEXT.
 
 2026-10-21 14:01:00 UTC — No Taintwatch restriction: Read [default.allow]
 Why: No applicable built-in risk rule matched.

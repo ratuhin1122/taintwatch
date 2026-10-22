@@ -208,3 +208,33 @@ Supported product target: macOS/Linux amd64/arm64; Windows best-effort through W
   not Claude plugin schema claims. See `docs/install.md`. The missing-binary
   shell emits only the already verified fixed ask/context envelopes. All product
   Go hook JSON still comes from `internal/hookio`.
+
+## M2.3 approval signal review (2026-10-22)
+
+- **verified (https://code.claude.com/docs/en/hooks#permissionrequest)**:
+  PermissionRequest happens before a permission decision; it does not report the
+  human's eventual selection.
+- **verified (https://code.claude.com/docs/en/hooks#posttooluse-input)**:
+  PostToolUse reports execution/input/result; its documented fields do not prove
+  who granted permission. Session `permission_mode` is not an approval receipt.
+- **verified (https://code.claude.com/docs/en/hooks#notification)**:
+  `permission_prompt` notifies that permission is needed.
+  **verified (https://code.claude.com/docs/en/hooks#permissiondenied)**:
+  PermissionDenied reports auto-mode denials, not successful human approvals.
+- An authenticated signal for approval of a particular Taintwatch ask:
+  **unverified / not documented in the current hook reference**. This scoped
+  documentation finding makes no claim about private internals or future
+  versions. Taintwatch never infers approval from success, transcripts, mode,
+  notification text, or suggestions. Risky actions ask again while tainted;
+  no per-session approval cache is automatically populated or consulted.
+- **verified (https://code.claude.com/docs/en/hooks#exit-code-2)**: exit 2 blocks
+  PreToolUse and cannot undo PostToolUse. Closed errors normally emit ask JSON
+  with exit 0. When an ask cannot be written before the deadline, a closed
+  pre-hook uses blocking exit 2 as its final fallback. Go context deadlines,
+  OS identity attribution, and reviewed user-policy editing are implementation
+  behavior, documented in `docs/approvals.md`.
+
+M2.3 hook commands also set the launcher-owned `TAINTWATCH_NO_BOOTSTRAP=1` environment
+variable so first-run networking cannot delay hook entry; checksum bootstrap is
+an explicit command before a session. This is an implementation setting, not a
+Claude Code schema field.

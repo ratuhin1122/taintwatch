@@ -59,10 +59,10 @@ func Render(w io.Writer, h audit.History, asJSON bool) error {
 		if r.Decision == "ask" {
 			fmt.Fprintln(&b, "Next: approve once in Claude Code if you trust this action.")
 			if r.Rule == "TW002" {
-				fmt.Fprintln(&b, "For repeated access, review egress.allow_domains and validate changes with taintwatch policy check.")
+				fmt.Fprintln(&b, "For repeated access, review a permanent exception with taintwatch allow domain HOST.")
 			}
 			if r.Tainted {
-				fmt.Fprintln(&b, "After reviewing the untrusted content, consider clearing taint; a clear CLI is not implemented yet.")
+				fmt.Fprintln(&b, "After reviewing the untrusted content, explicitly clear with taintwatch clear --session ID --reason TEXT.")
 			}
 		}
 	}

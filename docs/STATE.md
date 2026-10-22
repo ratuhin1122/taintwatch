@@ -46,8 +46,12 @@ Each operation takes a session ID and returns a Session plus an error:
 
 Reasons must be 1..512 bytes. Approvals and clears require `who`; these strings
 are attribution supplied by the caller, not proof of authorization. Agent-driven
-clears must still require approval in the future pre-hook/rule layer. No clear CLI
-is exposed. M1.4 uses this store from the post hook. JSON snapshots are limited to 16 MiB,
+clears require confirmation through TW006 in the pre-hook layer. The explicit
+`clear [--session ID] --reason TEXT` CLI records the OS identity and redacted
+reason in both state and audit; it first persists an intent record, then clears,
+then records completion. Audit failure before intent prevents clearing. If state
+or completion audit fails, the CLI reports failure and the intent remains; these
+two files do not form a single atomic transaction. JSON snapshots are limited to 16 MiB,
 and oversized updates fail instead of producing unreadable state.
 
 ## Locking, durability, and cleanup

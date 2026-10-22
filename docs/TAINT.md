@@ -95,8 +95,9 @@ context requesting user confirmation. This is not an enforceable closed gate:
 PostToolUse has already run, and pre-hook enforcement is required to ask
 before later actions. Closed cannot undo the completed tool call.
 
-A worker deadline is three seconds; the executable also has a final 3.25-second
-exit-0 watchdog covering blocked filesystem/output operations. A broken transport
+A 1.8-second context budget covers evaluation and output, with 1.35 seconds for
+the worker. The executable has a final two-second watchdog covering blocked
+filesystem/output operations. Post hooks always exit 0. A broken transport
 or final watchdog exit may prevent context or audit output. No late worker writes
 stdout. Hook latency is not yet measured; no <50 ms result is claimed.
 

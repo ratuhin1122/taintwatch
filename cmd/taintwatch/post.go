@@ -1,24 +1,25 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
-	"sync/atomic"
 	"time"
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
 	"github.com/ratuhin1122/taintwatch/internal/hookio"
 	"github.com/ratuhin1122/taintwatch/internal/policy"
+	"github.com/ratuhin1122/taintwatch/internal/shellparse"
 	"github.com/ratuhin1122/taintwatch/internal/state"
 	"github.com/ratuhin1122/taintwatch/internal/taint"
 )
 
-const postTimeout = 3 * time.Second
-
 type postOutcome struct {
 	result  hookio.Result
 	failure string
+	closed  bool
+	help    string
 }
 
 func runPost(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
@@ -28,47 +29,37 @@ func runPost(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 // The worker never writes stdout. A late result after the deadline cannot emit a
 // second object; returning to main exits the hook process, including stuck reads.
 func runPostWithin(args []string, stdin io.Reader, stdout, stderr io.Writer, timeout time.Duration) int {
+	return guardedHook(args, stdin, stdout, stderr, timeout, true, func(ctx context.Context, in io.Reader, observe func(string)) postOutcome {
+		return postWork(ctx, args, in, observe)
+	})
+}
+func postWork(ctx context.Context, args []string, stdin io.Reader, observe func(string)) postOutcome {
 	flags := flag.NewFlagSet("hook post", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	profile := flags.String("profile", "", "source profile; default from policy")
 	failMode := flags.String("fail-mode", "", "internal error behavior; default from policy")
 	if err := flags.Parse(args); err == flag.ErrHelp {
-		fmt.Fprintln(stdout, "Usage: taintwatch hook post [--profile balanced|paranoid] [--fail-mode open|closed]")
-		return exitOK
+		return postOutcome{help: "Usage: taintwatch hook post [--profile balanced|paranoid] [--fail-mode open|closed]\n"}
 	} else if err != nil || flags.NArg() != 0 {
-		return finishPost(postFailure(userErrorMode(*failMode), "configuration"), stdout, stderr)
+		fallback := *failMode
+		if fallback == "" {
+			fallback = explicitMode(args)
+		}
+		mode := userErrorMode(fallback)
+		observe(mode)
+		return postFailure(mode, "configuration")
 	}
 	if *failMode != "" && *failMode != "open" && *failMode != "closed" {
-		return finishPost(postFailure(userErrorMode(""), "configuration"), stdout, stderr)
+		mode := userErrorMode("")
+		observe(mode)
+		return postFailure(mode, "configuration")
 	}
 	if *profile != "" && *profile != "balanced" && *profile != "paranoid" {
-		return finishPost(postFailure(userErrorMode(*failMode), "configuration"), stdout, stderr)
+		mode := userErrorMode(*failMode)
+		observe(mode)
+		return postFailure(mode, "configuration")
 	}
-	completed := make(chan postOutcome, 1)
-	var closed atomic.Bool
-	closed.Store(*failMode == "closed")
-	errorMode := func() string {
-		if closed.Load() {
-			return "closed"
-		}
-		return "open"
-	}
-	go func() {
-		defer func() {
-			if recover() != nil {
-				completed <- postFailure(errorMode(), "internal panic")
-			}
-		}()
-		completed <- processPostConfigured(stdin, *failMode, *profile, func(mode string) { closed.Store(mode == "closed") }, nil)
-	}()
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
-	select {
-	case outcome := <-completed:
-		return finishPost(outcome, stdout, stderr)
-	case <-timer.C:
-		return finishPost(postFailure(errorMode(), "deadline"), stdout, stderr)
-	}
+	return processPostContext(ctx, stdin, *failMode, *profile, observe, nil)
 }
 
 func postFailure(mode, stage string) postOutcome {
@@ -93,6 +84,12 @@ func processPost(stdin io.Reader, classifier *taint.Classifier, mode string) pos
 	return processPostConfigured(stdin, mode, "", nil, classifier)
 }
 func processPostConfigured(stdin io.Reader, override, profile string, observe func(string), classifier *taint.Classifier) postOutcome {
+	return processPostContext(context.Background(), stdin, override, profile, observe, classifier)
+}
+func processPostContext(ctx context.Context, stdin io.Reader, override, profile string, observe func(string), classifier *taint.Classifier) postOutcome {
+	if override != "" && observe != nil {
+		observe(override)
+	}
 	boot, _ := policy.Load(policy.Options{NoProject: true})
 	mode := boot.Config.FailMode
 	if override != "" {
@@ -111,6 +108,9 @@ func processPostConfigured(stdin io.Reader, override, profile string, observe fu
 		observe(mode)
 	}
 	warning := policyWarning(loaded, policyErr)
+	if ctx.Err() != nil {
+		return postFailure(mode, "deadline")
+	}
 	store, err := policyStore(loaded.Config)
 	if err != nil {
 		return postFailure(mode, "state initialization")
@@ -146,6 +146,10 @@ func processPostConfigured(stdin io.Reader, override, profile string, observe fu
 	if err != nil {
 		return failure("source classification")
 	}
+	parseFailed := input.ToolName == "Bash" && shellparse.Parse(args.Command).Unparseable
+	if ctx.Err() != nil {
+		return postFailure(mode, "deadline")
+	}
 	var session state.Session
 	if m.Tainted {
 		session, err = store.MarkTainted(input.SessionID, state.TaintEvent{Tool: input.ToolName, Source: m.Source, Reason: m.Reason})
@@ -159,8 +163,15 @@ func processPostConfigured(stdin io.Reader, override, profile string, observe fu
 		}
 		return outcome
 	}
+	if ctx.Err() != nil {
+		return postFailure(mode, "deadline")
+	}
 	record.Rule = m.Rule
 	record.Reason = m.Reason
+	if parseFailed {
+		record.Rule = "post.error"
+		record.Reason = "post hook error at shell parsing; provenance classified conservatively"
+	}
 	record.Tainted = session.Tainted
 	record.StateKnown = true
 	seen := map[string]bool{}
@@ -180,6 +191,9 @@ func processPostConfigured(stdin io.Reader, override, profile string, observe fu
 	}
 	if m.Tainted {
 		return postOutcome{result: hookio.AdditionalContext(m.Context()), failure: warning}
+	}
+	if parseFailed {
+		return postFailure(mode, "shell parsing")
 	}
 	if policyErr != nil && mode == "closed" {
 		return postFailure(mode, "policy loading")

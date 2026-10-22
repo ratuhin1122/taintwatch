@@ -67,9 +67,9 @@ func TestPreDeadline(t *testing.T) {
 	release := make(chan struct{})
 	returned := make(chan struct{})
 	var out, errOut bytes.Buffer
-	code := runPreWithin([]string{"--fail-mode", "closed"}, blockedPostReader{release, returned}, &out, &errOut, 20*time.Millisecond)
+	code := runPreWithin([]string{"--fail-mode", "closed"}, blockedPostReader{release, returned}, &out, &errOut, 250*time.Millisecond)
 	close(release)
-	<-returned
+	// Cancellation may prevent Read from being called; it need not signal returned.
 	if code != 0 || !strings.Contains(out.String(), `"permissionDecision":"ask"`) || !strings.Contains(errOut.String(), "deadline") {
 		t.Fatalf("%d %s %s", code, out.String(), errOut.String())
 	}

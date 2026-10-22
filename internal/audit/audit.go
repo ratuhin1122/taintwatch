@@ -21,6 +21,7 @@ type Record struct {
 	Decision       string    `json:"decision"`
 	Rule           string    `json:"rule"`
 	Reason         string    `json:"reason"`
+	Who            string    `json:"who,omitempty"`
 	Tainted        bool      `json:"tainted"`
 	StateKnown     bool      `json:"state_known"`
 	TaintSources   []string  `json:"taint_sources"`
@@ -92,6 +93,7 @@ func sanitize(record Record) Record {
 	record.Decision = Redact(record.Decision)
 	record.Rule = Redact(record.Rule)
 	record.Reason = Redact(record.Reason)
+	record.Who = Redact(record.Who)
 	// Do not accept accidental raw-input summaries from callers at this stage.
 	record.InputSummary = "tool arguments and response omitted"
 	record.TaintSources = append([]string{}, record.TaintSources...)

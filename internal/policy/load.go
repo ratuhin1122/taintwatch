@@ -167,7 +167,7 @@ func (e *Effective) apply(ch change, origin string, project bool) {
 				next = append(next, v.Value)
 			}
 		}
-		permissive := k == "egress.allow_domains" || k == "sources.mcp.trusted_servers" || strings.HasSuffix(k, ".extra_match") && e.Config.Rules[strings.Split(k, ".")[1]].Action == "allow"
+		permissive := k == "egress.allow_domains" || k == "secrets.allow_paths" || k == "sources.mcp.trusted_servers" || strings.HasSuffix(k, ".extra_match") && e.Config.Rules[strings.Split(k, ".")[1]].Action == "allow"
 		if restricted {
 			if permissive {
 				safe := []string{}
@@ -293,6 +293,8 @@ func (e *Effective) list(k string) []string {
 		return e.Config.Egress.AllowDomains
 	case "secrets.paths":
 		return e.Config.Secrets.Paths
+	case "secrets.allow_paths":
+		return e.Config.Secrets.AllowPaths
 	case "protected_writes":
 		return e.Config.ProtectedWrites
 	}
@@ -316,6 +318,8 @@ func (e *Effective) setList(k string, v []string) {
 		e.Config.Egress.AllowDomains = v
 	case "secrets.paths":
 		e.Config.Secrets.Paths = v
+	case "secrets.allow_paths":
+		e.Config.Secrets.AllowPaths = v
 	case "protected_writes":
 		e.Config.ProtectedWrites = v
 	default:

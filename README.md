@@ -45,6 +45,9 @@ taintwatch version [--help]
 taintwatch install
 taintwatch uninstall
 taintwatch doctor
+taintwatch allow <domain HOST|path FILE> [--yes]
+taintwatch disallow <domain HOST|path FILE> [--yes]
+taintwatch clear [--session ID] --reason TEXT
 taintwatch --help
 ```
 
@@ -55,6 +58,13 @@ checks the built-in risk rules and returns ask for applicable actions; see
 [rule behavior](docs/RULES.md). Prompt/session-start remain stubs. `explain` and
 `status` inspect audit history and current state; see [audit logging](docs/AUDIT.md).
 No hooks are installed automatically.
+
+Permanent user-policy exceptions require a displayed diff and terminal `[y/N]`
+confirmation (or explicit `--yes`). Clear requires a reason and records the OS
+identity. Both ask through TW006 when called from Claude's Bash tool. See
+[approvals, clearing, and fail modes](docs/approvals.md). Native permission
+approvals are not cached: the documented hooks do not prove which human approved
+an individual ask, so risky actions ask again while tainted.
 
 Exit codes:
 
