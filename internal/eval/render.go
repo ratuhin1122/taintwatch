@@ -124,6 +124,10 @@ func Render(w io.Writer, r Report, format string) error {
 			row("---", "---", "---", "---", "---")
 		}
 		for _, f := range r.Failures {
+			if f.Message != "" {
+				fmt.Fprintln(&b, safe(f.Message))
+				continue
+			}
 			e := f.Expected.Decision
 			if f.Expected.Rule != "" {
 				e += " / " + f.Expected.Rule

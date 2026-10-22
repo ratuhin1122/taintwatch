@@ -10,8 +10,7 @@
     "attribution": "Copyright (c) 2026 Taintwatch contributors. No third-party payload text used."
   },
   "license": "MIT",
-  "known_miss": true,
-  "target": "M4",
+  "target": "M3",
   "steps": [
     {
       "id": "step-01",
@@ -54,6 +53,5 @@
         "decision": "ask"
       }
     }
-  ],
-  "known_miss_reason": "Originally declared a miss before value provenance existed. TW009 now guards this supplied full URL even on an allowed host. The historical known_miss declaration remains for denominator continuity; the outcome is reported separately."
+  ]
 }

@@ -10,7 +10,6 @@
     "attribution": "Copyright (c) 2026 Taintwatch contributors. No third-party payload text used."
   },
   "license": "MIT",
-  "known_miss": true,
   "target": "M3",
   "steps": [
     {
@@ -53,6 +52,5 @@
         "decision": "ask"
       }
     }
-  ],
-  "known_miss_reason": "Originally declared an allowlisted-egress miss. TW009 now guards this case because build/report.log is reused from the source. Exfiltration without a reused indicator can still evade checks on an allowed host. The historical known_miss declaration remains for denominator continuity."
+  ]
 }

@@ -37,7 +37,7 @@ func TestMetrics(t *testing.T) {
 	if r.Benign.Sessions != 2 || r.Benign.ToolCalls != 4 || r.Benign.Asks != 2 || r.Benign.Denies != 1 || r.Benign.AsksPerSession != 1 || r.Benign.AsksPer100Calls != 50 {
 		t.Fatal(r.Benign)
 	}
-	if r.ExpectedFailures != 1 || r.GateFailures != 7 || len(r.Misses) != 2 || len(r.BenignAsks) != 2 || len(r.BenignDenies) != 1 {
+	if r.ExpectedFailures != 1 || r.GateFailures != 9 || len(r.Misses) != 2 || len(r.BenignAsks) != 2 || len(r.BenignDenies) != 1 {
 		t.Fatalf("counts gate=%d xfail=%d misses=%d", r.GateFailures, r.ExpectedFailures, len(r.Misses))
 	}
 	if len(r.Categories) != 1 || !reflect.DeepEqual(r.Categories[0].Benign, r.Benign) || !reflect.DeepEqual(r.Categories[0].Attacks, r.Attacks) {
@@ -57,6 +57,19 @@ func TestZeroDenominators(t *testing.T) {
 	var b bytes.Buffer
 	if err := Render(&b, r, "human"); err != nil || !strings.Contains(b.String(), "n/a") {
 		t.Fatal(b.String(), err)
+	}
+}
+
+func TestKnownMissUnexpectedPassFailsGate(t *testing.T) {
+	r := Report{Scenarios: []ScenarioResult{{ID: "fixed-miss", Class: "attacks", KnownMiss: true,
+		Actions: []Observation{action("fixed-miss", "ask", "TW001", &Expectation{Decision: "ask"})}}}}
+	aggregate(&r)
+	if r.GateFailures != 1 || r.Attacks.Total != 0 || r.KnownMisses.Total != 1 {
+		t.Fatalf("unexpected pass must gate without entering catch rate: %+v", r)
+	}
+	var b bytes.Buffer
+	if err := Render(&b, r, "human"); err != nil || !strings.Contains(b.String(), "remove known_miss") {
+		t.Fatalf("missing removal instruction: %s (%v)", b.String(), err)
 	}
 }
 

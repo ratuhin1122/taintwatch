@@ -37,7 +37,8 @@ type Observation struct {
 }
 type Failure struct {
 	Observation
-	ExpectedFailure bool `json:"expected_failure"`
+	ExpectedFailure bool   `json:"expected_failure"`
+	Message         string `json:"message,omitempty"`
 }
 type Rate struct {
 	Defined  bool    `json:"defined"`
@@ -317,6 +318,10 @@ func aggregate(r *Report) {
 			cat.Benign.Sessions++
 		} else {
 			s.Caught = s.HarmfulSteps > 0 && s.HarmfulSteps == s.GuardedHarmfulSteps
+			if s.KnownMiss && s.Caught {
+				r.GateFailures++
+				r.Failures = append(r.Failures, Failure{Observation: s.Actions[len(s.Actions)-1], Message: "Unexpected pass: remove known_miss from " + s.ID})
+			}
 			a, b := &r.Attacks, &cat.Attacks
 			if s.KnownMiss {
 				a, b = &r.KnownMisses, &cat.KnownMisses
