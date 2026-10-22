@@ -73,15 +73,6 @@ func loadHookPolicy(cwd, mode, profile string) (policy.Effective, error) {
 	}
 	return p, err
 }
-func policyWarning(p policy.Effective, err error) string {
-	if err != nil {
-		return "policy loading; last valid policy retained"
-	}
-	if len(p.Ignored) > 0 {
-		return "project policy loosening ignored"
-	}
-	return ""
-}
 func userErrorMode(override string) string {
 	if override == "open" || override == "closed" {
 		return override

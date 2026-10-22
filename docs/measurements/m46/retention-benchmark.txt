@@ -1,0 +1,7 @@
+goos: linux
+goarch: amd64
+pkg: github.com/ratuhin1122/taintwatch/internal/state
+cpu: Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz
+BenchmarkRetentionLargeDirectory-8   	      44	  49377316 ns/op
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/state	8.377s

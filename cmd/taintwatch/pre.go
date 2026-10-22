@@ -60,12 +60,6 @@ func preWork(ctx context.Context, args []string, in io.Reader, observe func(stri
 	}
 	return processPreContext(ctx, in, *mode, observe)
 }
-func processPre(reader io.Reader, mode string) postOutcome {
-	return processPreObserved(reader, mode, nil)
-}
-func processPreObserved(reader io.Reader, override string, observe func(string)) postOutcome {
-	return processPreContext(context.Background(), reader, override, observe)
-}
 func processPreContext(ctx context.Context, reader io.Reader, override string, observe func(string)) postOutcome {
 	o := hooks.Pre(ctx, reader, override, observe, hooks.Runtime{})
 	return postOutcome{result: o.Result, failure: o.Failure}

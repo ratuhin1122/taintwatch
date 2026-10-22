@@ -1,0 +1,25 @@
+fuzz: elapsed: 0s, gathering baseline coverage: 0/87 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 87/87 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 1356 (452/sec), new interesting: 4 (total: 91)
+fuzz: elapsed: 6s, execs: 1356 (0/sec), new interesting: 4 (total: 91)
+fuzz: elapsed: 9s, execs: 1356 (0/sec), new interesting: 4 (total: 91)
+fuzz: elapsed: 12s, execs: 52157 (16932/sec), new interesting: 7 (total: 94)
+fuzz: elapsed: 15s, execs: 61692 (3178/sec), new interesting: 39 (total: 126)
+fuzz: elapsed: 18s, execs: 73112 (3785/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 21s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 24s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 27s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 30s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 33s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 36s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 39s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 42s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 45s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 48s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 51s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 54s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 57s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 1m0s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+fuzz: elapsed: 1m1s, execs: 73112 (0/sec), new interesting: 43 (total: 130)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/valuematch	61.155s

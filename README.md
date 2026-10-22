@@ -213,6 +213,8 @@ make build VERSION=m4.2 && ./build/taintwatch version && ./build/taintwatch eval
 
 **Expected current exit: 1.** TW009 asks on a benign MCP-supplied `src/main.go` path; its allow expectation remains a failing gate rather than being relabeled. The encoded result includes zero decoded benign text blobs reaching heuristics, so it offers little evidence about false positives on encoded prose. [Full results, denominators, hashes, and known misses](docs/EVAL.md).
 
+The [2026-10-23 hardening report](docs/HARDENING.md) records passing race/fuzz/static checks and remaining release gates. The large-state fixture still exceeds the 50 ms median latency target on three paths; v0.9.0 is recommended before v1.0.
+
 ## Related projects
 
 Descriptions verified from their linked READMEs on 2026-10-22; no comparative benchmark was run.
@@ -248,7 +250,7 @@ MCP server prompt injection defense uses the same source-to-action model: result
 
 ### Will it slow Claude Code down?
 
-Hooks run local bounded analysis, without a remote model call. Typical and tail latency have not been benchmarked; the runtime uses a hard deadline, so a deadline is not a claim about normal response time.
+Hooks run local bounded analysis, without a remote model call. The [hardening report](docs/HARDENING.md) includes measured median/p99 process latency, raw samples and a reproducible large-state fixture. Results from one WSL host are not a platform guarantee. The Go deadline begins at binary entry; launcher work happens before it.
 
 ### Does it send data anywhere?
 

@@ -1,0 +1,19 @@
+ok  	github.com/ratuhin1122/taintwatch/cmd/taintwatch	64.945s
+ok  	github.com/ratuhin1122/taintwatch/internal/audit	1.158s
+?   	github.com/ratuhin1122/taintwatch/internal/detect	[no test files]
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/decoderun	1.178s
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/encoded	2.319s
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/hidden	10.402s
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/pasted	4.932s
+ok  	github.com/ratuhin1122/taintwatch/internal/eval	11.434s
+ok  	github.com/ratuhin1122/taintwatch/internal/explain	1.114s
+ok  	github.com/ratuhin1122/taintwatch/internal/hookio	39.816s
+?   	github.com/ratuhin1122/taintwatch/internal/hooks	[no test files]
+ok  	github.com/ratuhin1122/taintwatch/internal/install	2.607s
+ok  	github.com/ratuhin1122/taintwatch/internal/policy	2.070s
+ok  	github.com/ratuhin1122/taintwatch/internal/replay	1.482s
+ok  	github.com/ratuhin1122/taintwatch/internal/rules	2.751s
+ok  	github.com/ratuhin1122/taintwatch/internal/shellparse	1.077s
+ok  	github.com/ratuhin1122/taintwatch/internal/state	13.766s
+ok  	github.com/ratuhin1122/taintwatch/internal/taint	1.121s
+ok  	github.com/ratuhin1122/taintwatch/internal/valuematch	2.278s

@@ -30,8 +30,13 @@ fail() {
     esac
     case "${1:-}" in hook) exit 0;; *) exit 1;; esac
 }
-case $(uname -s) in Linux) os=linux;; Darwin) os=darwin;; *) fail "$@";; esac
-case $(uname -m) in x86_64|amd64) arch=amd64;; aarch64|arm64) arch=arm64;; *) fail "$@";; esac
+case $(uname -sm) in
+    'Linux x86_64'|'Linux amd64') os=linux; arch=amd64;;
+    'Linux aarch64'|'Linux arm64') os=linux; arch=arm64;;
+    'Darwin x86_64'|'Darwin amd64') os=darwin; arch=amd64;;
+    'Darwin aarch64'|'Darwin arm64') os=darwin; arch=arm64;;
+    *) fail "$@";;
+esac
 asset=taintwatch-$os-$arch
 if [ -x "$root/bin/$asset" ]; then exec "$root/bin/$asset" "$@"; fi
 if command -v taintwatch >/dev/null 2>&1; then exec taintwatch "$@"; fi

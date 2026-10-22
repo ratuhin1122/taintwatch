@@ -170,6 +170,20 @@ func TestCleanup(t *testing.T) {
 				}
 			}
 			foreign := filepath.Join(s.sessions, "notes.txt")
+			// Exercise the bounded worker path as well as active/boundary rules.
+			for i := 0; i < 300; i++ {
+				path := s.sessionPath(fmt.Sprintf("bulk-%d", i))
+				if err := os.WriteFile(path, []byte("{}"), 0600); err != nil {
+					t.Fatal(err)
+				}
+				stamp := now
+				if i%2 == 0 {
+					stamp = now.Add(-retention - time.Second)
+				}
+				if err := os.Chtimes(path, stamp, stamp); err != nil {
+					t.Fatal(err)
+				}
+			}
 			if err := os.WriteFile(foreign, []byte("keep"), 0600); err != nil {
 				t.Fatal(err)
 			}
@@ -189,6 +203,12 @@ func TestCleanup(t *testing.T) {
 			}
 			if _, err := os.Stat(s.sessionPath("expired")); !errors.Is(err, os.ErrNotExist) {
 				t.Fatalf("expired survives: %v", err)
+			}
+			for i := 0; i < 300; i++ {
+				_, err := os.Stat(s.sessionPath(fmt.Sprintf("bulk-%d", i)))
+				if i%2 == 0 && !errors.Is(err, os.ErrNotExist) || i%2 != 0 && err != nil {
+					t.Fatalf("bulk retention %d: %v", i, err)
+				}
 			}
 			for _, path := range []string{s.sessionPath("boundary"), s.sessionPath("recent"), s.sessionPath("active"), foreign} {
 				if _, err := os.Stat(path); err != nil {

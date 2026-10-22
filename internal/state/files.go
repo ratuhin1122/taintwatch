@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -41,6 +42,11 @@ func openRegular(path string, flags int) (*os.File, error) {
 	info, err := f.Stat()
 	if err == nil && !info.Mode().IsRegular() {
 		err = errors.New("state path must be a regular file")
+	}
+	// A hard link can alias an unmanaged file even when O_NOFOLLOW succeeds.
+	// Reject it before repairing permissions or reading/writing any contents.
+	if err == nil && !singleLink(info) {
+		err = errors.New("managed state file must have exactly one hard link")
 	}
 	if err == nil && info.Mode().Perm() != 0600 {
 		err = f.Chmod(0600)
@@ -170,26 +176,63 @@ func (s *Store) cleanup(now time.Time, active string) error {
 		return err
 	}
 	cutoff := now.Add(-s.retention)
-	for _, entry := range entries {
+	inspect := func(entry os.DirEntry) error {
 		name := entry.Name()
-		if name == active || !sessionFilename(name) {
-			continue
-		}
 		info, err := entry.Info()
 		if errors.Is(err, os.ErrNotExist) {
-			continue
+			return nil
 		}
 		if err != nil {
 			return err
 		}
 		if !info.Mode().IsRegular() || !info.ModTime().Before(cutoff) {
-			continue
+			return nil
 		}
 		if err := os.Remove(filepath.Join(s.sessions, name)); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
+		return nil
 	}
-	return nil
+	// Keep the all-files-on-every-write retention contract. Bounded workers
+	// overlap independent metadata lookups in large directories; the process
+	// lock remains held, so cooperating writers cannot refresh a scanned file.
+	if len(entries) < 256 {
+		for _, entry := range entries {
+			if entry.Name() != active && sessionFilename(entry.Name()) {
+				if err := inspect(entry); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	jobs := make(chan os.DirEntry, 64)
+	var workers sync.WaitGroup
+	var errorMu sync.Mutex
+	var firstErr error
+	for i := 0; i < 4; i++ {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			for entry := range jobs {
+				if err := inspect(entry); err != nil {
+					errorMu.Lock()
+					if firstErr == nil {
+						firstErr = err
+					}
+					errorMu.Unlock()
+				}
+			}
+		}()
+	}
+	for _, entry := range entries {
+		if entry.Name() != active && sessionFilename(entry.Name()) {
+			jobs <- entry
+		}
+	}
+	close(jobs)
+	workers.Wait()
+	return firstErr
 }
 
 func sessionFilename(name string) bool {

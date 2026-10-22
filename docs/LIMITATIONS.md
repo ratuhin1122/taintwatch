@@ -73,8 +73,21 @@ not establish that a session, command, document or destination is safe.
   and atomic replacement are not a universal crash-durability guarantee. Audit
   rotation and retention discard history; counts describe retained records.
   Secret redaction is best-effort and logs are not authenticated or tamper-proof.
-  Tool bodies are omitted. No hook performance benchmark has been published.
+  Tool bodies are omitted. See [HARDENING.md](HARDENING.md) for measured hook
+  latency and the exact fixture; one WSL host is not a platform latency guarantee.
+  Unknown secrets in free-form metadata or operator clear reasons can escape
+  pattern-based redaction. Do not paste secrets into those reasons. Stored taint
+  indicators and their encoded variants are private state, not redacted audit data.
+  Managed file endpoints reject symlinks and hard links; parent-directory races
+  and another process running as the same user remain outside the boundary.
+  Give each state home its own audit path: separate homes do not share a rotation
+  lock merely because they point at the same custom log file.
   See [AUDIT.md](AUDIT.md).
+- **Trust exceptions and deadlines.** MCP trusted-server exceptions currently
+  match names, not the newer hook provenance source; keep the list empty unless
+  server names and their configuration are controlled. The Go hook deadline starts
+  after binary entry. Launcher filesystem checks and OS scheduling are outside
+  that deadline; it is not a universal wall-clock guarantee.
 - **Audit replay cannot recover omitted facts.** Replay freezes historical taint
   and complete rule-match snapshots to compare rule actions/enabled flags. Legacy
   records and changed matching/source criteria are unreplayable; it does not

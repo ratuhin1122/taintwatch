@@ -10,6 +10,11 @@ import (
 
 func supportedPlatform() error { return nil }
 
+func singleLink(info os.FileInfo) bool {
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	return ok && stat.Nlink == 1
+}
+
 func openNoFollow(path string, flags int) (*os.File, error) {
 	// NONBLOCK avoids hanging on a FIFO before openRegular can reject its type.
 	return os.OpenFile(path, flags|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0600)

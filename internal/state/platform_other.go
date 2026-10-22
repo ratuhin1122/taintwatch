@@ -4,6 +4,8 @@ package state
 
 import "os"
 
+func singleLink(os.FileInfo) bool { return false }
+
 func supportedPlatform() error                   { return ErrUnsupportedPlatform }
 func openNoFollow(string, int) (*os.File, error) { return nil, ErrUnsupportedPlatform }
 func tryLock(*os.File) error                     { return ErrUnsupportedPlatform }
