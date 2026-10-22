@@ -13,6 +13,10 @@ Policy SHA256: policy
 | Asks per 100 benign tool calls | 100.0000 |
 | Unexpected expectation failures | 2 |
 | Expected harmful-step misses | 0 |
+| Encoded telemetry: benign post responses / scanned | 0 / 0 |
+| Encoded telemetry: benign responses flagged (apparent FP rate) | n/a (no benign response scans) |
+| Encoded telemetry: benign decoded blobs / text blobs | 0 / 0 |
+| Encoded telemetry: limited benign scans | 0 |
 
 Primary rule hits
 

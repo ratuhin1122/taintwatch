@@ -1,0 +1,11 @@
+Session encoded-session — 1 recent decision(s)
+
+2026-10-22 14:02:00 UTC — Recorded completed tool call: WebFetch [taint.web]
+Why: Web content is untrusted.
+Decoded-content hint (informational): base64 / instruction-like; blobs=1; contents omitted.
+Decoded-content hint (informational): base64 / secret-path; blobs=1; contents omitted.
+Encoded scan (one level): candidates=1; decoded blobs=1; text blobs=1; decoded bytes=48; skipped=0.
+Encoded scan: bounds reached; absence of hints is inconclusive.
+Taint: yes; sources: web.
+
+Asks in retained history: 0 (older rotated records may have expired).

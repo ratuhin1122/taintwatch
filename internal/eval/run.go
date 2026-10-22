@@ -76,6 +76,16 @@ type ScenarioResult struct {
 	Caught              bool          `json:"caught"`
 	Actions             []Observation `json:"actions"`
 }
+type EncodedMetrics struct {
+	Responses    int     `json:"benign_post_responses"`
+	Scanned      int     `json:"benign_scanned_responses"`
+	Flagged      int     `json:"benign_flagged_responses"`
+	Limited      int     `json:"benign_limited_scans"`
+	DecodedBlobs int     `json:"benign_decoded_blobs"`
+	TextBlobs    int     `json:"benign_decoded_text_blobs"`
+	Defined      bool    `json:"false_positive_rate_defined"`
+	Fraction     float64 `json:"response_false_positive_fraction"`
+}
 type Report struct {
 	SchemaVersion    int              `json:"schema_version"`
 	CorpusSHA256     string           `json:"corpus_sha256"`
@@ -92,6 +102,7 @@ type Report struct {
 	Failures         []Failure        `json:"expectation_failures"`
 	GateFailures     int              `json:"gate_failures"`
 	ExpectedFailures int              `json:"expected_failures"`
+	Encoded          EncodedMetrics   `json:"encoded_telemetry"`
 }
 
 func digest(v any) string {
@@ -177,6 +188,24 @@ func Run(ctx context.Context, root string) (Report, error) {
 				return r, fmt.Errorf("%s/%s: hook infrastructure failure at %s", result.ID, step.ID, outcome.Failure)
 			}
 			if step.Event != "PreToolUse" {
+				if c.Class == "benign" {
+					h, e := audit.Query(store, result.ID, 1)
+					if e != nil || len(h.Records) != 1 || h.Records[0].Hook != "PostToolUse" {
+						return r, fmt.Errorf("%s/%s: missing post-hook telemetry audit", result.ID, step.ID)
+					}
+					r.Encoded.Responses++
+					if e := h.Records[0].Encoded; e != nil {
+						r.Encoded.Scanned++
+						r.Encoded.DecodedBlobs += e.DecodedBlobs
+						r.Encoded.TextBlobs += e.TextBlobs
+						if len(e.Findings) > 0 {
+							r.Encoded.Flagged++
+						}
+						if e.Truncated || e.LimitReached {
+							r.Encoded.Limited++
+						}
+					}
+				}
 				continue
 			}
 			h, err := audit.Query(store, result.ID, 1)
@@ -195,6 +224,8 @@ func Run(ctx context.Context, root string) (Report, error) {
 		r.Scenarios = append(r.Scenarios, result)
 	}
 	aggregate(&r)
+	r.Encoded.Defined = r.Encoded.Scanned > 0
+	r.Encoded.Fraction = fraction(r.Encoded.Flagged, r.Encoded.Scanned)
 	return r, nil
 }
 

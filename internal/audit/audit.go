@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ratuhin1122/taintwatch/internal/detect/encoded"
 	"github.com/ratuhin1122/taintwatch/internal/detect/hidden"
 	"github.com/ratuhin1122/taintwatch/internal/detect/pasted"
 	"github.com/ratuhin1122/taintwatch/internal/rules"
@@ -48,6 +49,7 @@ type Record struct {
 	Evidence       []string        `json:"evidence,omitempty"`
 	PolicyWarnings []string        `json:"policy_warnings,omitempty"`
 	Hidden         *hidden.Report  `json:"hidden,omitempty"`
+	Encoded        *encoded.Report `json:"encoded,omitempty"`
 	Pasted         *pasted.Report  `json:"pasted,omitempty"`
 	Replay         *rules.Snapshot `json:"replay,omitempty"`
 }
@@ -123,6 +125,15 @@ func sanitize(record Record) Record {
 			h.Findings[i].Excerpt = hidden.Visible(Redact(h.Findings[i].Excerpt))
 		}
 		record.Hidden = &h
+	}
+	if record.Encoded != nil {
+		e := *record.Encoded
+		e.Findings = append([]encoded.Finding(nil), e.Findings...)
+		for i := range e.Findings {
+			e.Findings[i].Type = hidden.Visible(Redact(e.Findings[i].Type))
+			e.Findings[i].Encoding = hidden.Visible(Redact(e.Findings[i].Encoding))
+		}
+		record.Encoded = &e
 	}
 	record.PolicyWarnings = append([]string(nil), record.PolicyWarnings...)
 	for i := range record.PolicyWarnings {

@@ -33,6 +33,12 @@ words, or link targets. They receive the same audit redaction and visible-contro
 rendering. These hints appear in `explain` and never change decisions. See
 [HIDDEN-CONTENT.md](HIDDEN-CONTENT.md) for coverage and limits.
 
+Tainting post responses can also include `encoded` telemetry: bounded one-level
+decode counters, skipped-shape/limit indicators, and encoding/type/blob-count
+aggregates. No encoded blob or decoded body is included. Explain renders these
+as informational hints; they never change decisions or populate value provenance.
+See [ENCODED-CONTENT.md](ENCODED-CONTENT.md).
+
 UserPromptSubmit writes `decision: "observe"` and `rule: "prompt.telemetry"`.
 Its `hidden` report covers presentation hints; `pasted` contains fenced-block
 and log-like-line counters plus a long-log flag and prefix bounds. These records

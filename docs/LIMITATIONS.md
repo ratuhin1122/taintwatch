@@ -60,6 +60,14 @@ not establish that a session, command, document or destination is safe.
   never blocks, rewrites the prompt, changes taint or grants approval. See
   [HIDDEN-CONTENT.md](HIDDEN-CONTENT.md) and
   [PROMPT-TELEMETRY.md](PROMPT-TELEMETRY.md).
+- **Encoded-content hints are also telemetry.** Only one level of bounded
+  contiguous base64/hex is decoded. Short, wrapped, nested, encrypted, binary or
+  oversized data and known-shape exclusions can hide instructions. Lexical hints
+  can flag harmless encoded discussions. They never modify decisions, model
+  context or value provenance. The benign corpus is not a labeled collection of
+  encoded negative controls, so its response-level flag rate is weak evidence
+  about encoded-data false positives. See [ENCODED-CONTENT.md](ENCODED-CONTENT.md) and the measured
+  counters in [EVAL.md](EVAL.md#measured-results).
 - **Storage and privacy.** Product storage targets local Unix filesystems on
   Linux/macOS; native Windows storage is unsupported, so use WSL. Advisory locks
   and atomic replacement are not a universal crash-durability guarantee. Audit

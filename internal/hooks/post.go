@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
+	"github.com/ratuhin1122/taintwatch/internal/detect/encoded"
 	"github.com/ratuhin1122/taintwatch/internal/detect/hidden"
 	"github.com/ratuhin1122/taintwatch/internal/hookio"
 	"github.com/ratuhin1122/taintwatch/internal/shellparse"
@@ -82,6 +83,8 @@ func Post(ctx context.Context, stdin io.Reader, override, profile string, observ
 		report := hidden.Scan(text)
 		report.Truncated = report.Truncated || truncated
 		record.Hidden = &report
+		decoded := encoded.ScanPrefix(text, truncated)
+		record.Encoded = &decoded
 	}
 	parseFailed := input.ToolName == "Bash" && shellparse.Parse(args.Command).Unparseable
 	if ctx.Err() != nil {

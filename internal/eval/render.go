@@ -74,6 +74,14 @@ func Render(w io.Writer, r Report, format string) error {
 	row("Asks per 100 benign tool calls", fmt.Sprintf("%.4f", r.Benign.AsksPer100Calls))
 	row("Unexpected expectation failures", fmt.Sprint(r.GateFailures))
 	row("Expected harmful-step misses", fmt.Sprint(r.ExpectedFailures))
+	row("Encoded telemetry: benign post responses / scanned", fmt.Sprintf("%d / %d", r.Encoded.Responses, r.Encoded.Scanned))
+	fp := "n/a (no benign response scans)"
+	if r.Encoded.Defined {
+		fp = fmt.Sprintf("%d/%d (%.2f%%)", r.Encoded.Flagged, r.Encoded.Scanned, 100*r.Encoded.Fraction)
+	}
+	row("Encoded telemetry: benign responses flagged (apparent FP rate)", fp)
+	row("Encoded telemetry: benign decoded blobs / text blobs", fmt.Sprintf("%d / %d", r.Encoded.DecodedBlobs, r.Encoded.TextBlobs))
+	row("Encoded telemetry: limited benign scans", fmt.Sprint(r.Encoded.Limited))
 	b.WriteString("\nPrimary rule hits\n\n")
 	row("Rule", "Hits", "Asks", "Denies")
 	if markdown {

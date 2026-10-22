@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
+	"github.com/ratuhin1122/taintwatch/internal/detect/encoded"
 	"github.com/ratuhin1122/taintwatch/internal/detect/hidden"
 	"github.com/ratuhin1122/taintwatch/internal/detect/pasted"
 )
@@ -19,6 +20,9 @@ func TestGolden(t *testing.T) {
 		history audit.History
 	}{
 		{"empty", audit.History{Records: []audit.Record{}}},
+		{"encoded", audit.History{Session: "encoded-session", Records: []audit.Record{
+			{TS: time.Date(2026, 10, 22, 14, 2, 0, 0, time.UTC), Tool: "WebFetch", Hook: "PostToolUse", Decision: "allow", Rule: "taint.web", Reason: "Web content is untrusted.", StateKnown: true, Tainted: true, TaintSources: []string{"web"}, Encoded: &encoded.Report{Candidates: 1, DecodedBlobs: 1, TextBlobs: 1, DecodedBytes: 48, LimitReached: true, Findings: []encoded.Finding{{Encoding: "base64", Type: "instruction-like", Count: 1}, {Encoding: "base64", Type: "secret-path", Count: 1}}}},
+		}}},
 		{"prompt", audit.History{Session: "prompt-session", Records: []audit.Record{
 			{TS: time.Date(2026, 10, 22, 15, 0, 0, 0, time.UTC), Tool: "prompt", Hook: "UserPromptSubmit", Decision: "observe", Rule: "prompt.telemetry", Reason: "Prompt presentation and pasted-content hints recorded; no enforcement.", Hidden: &hidden.Report{Findings: []hidden.Finding{{Type: "zero-width", Count: 1, Excerpt: "<U+200B>"}}}, Pasted: &pasted.Report{FencedBlocks: 1, LogLines: 40, LongLog: true}},
 		}}},

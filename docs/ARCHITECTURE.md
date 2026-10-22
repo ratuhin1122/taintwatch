@@ -22,6 +22,8 @@ flowchart TD
     Post --> Taint["taint: source classifier"]
     Taint -->|"Tainting response strings"| Values["valuematch: bounded extraction and encodings"]
     Values -->|"Persist original indicators and variants"| State
+    Taint -->|"Tainting response strings"| Encoded["encoded: bounded single-level telemetry"]
+    Encoded -->|"Hint types and counts only"| Audit
     State -->|"Retained patterns"| Matcher["valuematch: compiled Aho-Corasick"]
     Matcher -->|"Argument matches: TW009"| Rules
     Taint -->|"MarkTainted or Touch"| State
@@ -88,6 +90,11 @@ Value provenance stores bounded indicators and encodings in session state and
 matches later arguments through TW009. Originals are not copied into audit
 reasons. Exact matching cannot infer intent or semantic transformations; see
 [VALUEMATCH.md](VALUEMATCH.md). Native approval reuse remains unverified.
+
+Encoded-content analysis decodes a bounded set of base64/hex candidates once and
+reuses lexical, URL and shell AST heuristics. Its decoded bodies never enter the
+rule table or value-provenance state; only informational type/count metadata
+reaches audit and explain. See [ENCODED-CONTENT.md](ENCODED-CONTENT.md).
 
 ## M1 executable scenario
 

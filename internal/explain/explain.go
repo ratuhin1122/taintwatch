@@ -61,6 +61,16 @@ func Render(w io.Writer, h audit.History, asJSON bool) error {
 				fmt.Fprintf(&b, "Content scan: prefix only (%d bytes); response was truncated for scanning.\n", r.Hidden.BytesScanned)
 			}
 		}
+		if r.Encoded != nil {
+			e := r.Encoded
+			for _, f := range e.Findings {
+				fmt.Fprintf(&b, "Decoded-content hint (informational): %s / %s; blobs=%d; contents omitted.\n", text(f.Encoding), text(f.Type), f.Count)
+			}
+			fmt.Fprintf(&b, "Encoded scan (one level): candidates=%d; decoded blobs=%d; text blobs=%d; decoded bytes=%d; skipped=%d.\n", e.Candidates, e.DecodedBlobs, e.TextBlobs, e.DecodedBytes, e.Skipped)
+			if e.Truncated || e.LimitReached {
+				fmt.Fprintln(&b, "Encoded scan: bounds reached; absence of hints is inconclusive.")
+			}
+		}
 		if r.Pasted != nil {
 			fmt.Fprintf(&b, "Pasted-content hints (informational): fenced blocks=%d; log-like lines=%d; long log=%t.\n", r.Pasted.FencedBlocks, r.Pasted.LogLines, r.Pasted.LongLog)
 			if r.Pasted.Truncated {

@@ -25,7 +25,7 @@ cwd, not searched upward.
 
 ## Measured results
 
-Measured on **2026-10-22**, using build version **m4.1** (a local milestone
+Measured on **2026-10-22**, using build version **m4.2** (a local milestone
 label, not a published release), on Linux through Ubuntu WSL. The evaluator uses
 the built-in balanced policy. This review batch contains **50 scenarios: 20
 attacks and 30 benign**, with **116 hook events, 64 action expectations and 3
@@ -45,7 +45,7 @@ this **single command** builds the labeled binary, prints its version, validates
 the corpus counts, and reproduces every measured value and hash in the report:
 
 ```sh
-make build VERSION=m4.1 && ./build/taintwatch version && ./build/taintwatch eval validate && ./build/taintwatch eval run --markdown
+make build VERSION=m4.2 && ./build/taintwatch version && ./build/taintwatch eval validate && ./build/taintwatch eval run --markdown
 ```
 
 The date above records this run; a later run has its own date. Reproduction assumes
@@ -64,6 +64,18 @@ supplied full URL and the supplied upload file path; the transformed workflow
 remains missed. This does not solve arbitrary allowlisted-host exfiltration or
 semantic transformations. [VALUEMATCH.md](VALUEMATCH.md) explains this tradeoff.
 
+Encoded-content telemetry observed **0/30 flagged benign response scans (0.00%)**,
+from **31 benign post responses**, with **59 successfully decoded
+candidates, zero decoded text blobs reaching the heuristics, and zero limited
+scans**. The same command
+above reproduces these counters in the table below. A successful decoding alone
+is not a hint. Because no decoded text reached the heuristics, this apparent
+response-level false-positive rate provides little evidence about encoded benign
+text; it is not a precision estimate for such content. The corpus is unchanged,
+and the existing action decisions and gate failure are unchanged. Unit controls
+exercise actual decoded benign text and skipped shapes separately and are not
+included in the corpus counts. See [ENCODED-CONTENT.md](ENCODED-CONTENT.md).
+
 <!-- BEGIN MEASURED REPORT -->
 ## Taintwatch evaluation
 
@@ -80,6 +92,10 @@ Policy SHA256: e55b21f2dc458c165b119e207ed9abdc2706af9ec539d2444f69e4666e734a2a
 | Asks per 100 benign tool calls | 2.9412 |
 | Unexpected expectation failures | 1 |
 | Expected harmful-step misses | 1 |
+| Encoded telemetry: benign post responses / scanned | 31 / 30 |
+| Encoded telemetry: benign responses flagged (apparent FP rate) | 0/30 (0.00%) |
+| Encoded telemetry: benign decoded blobs / text blobs | 59 / 0 |
+| Encoded telemetry: limited benign scans | 0 |
 
 Primary rule hits
 
@@ -364,6 +380,15 @@ Definitions:
   `defined: false` and numeric fraction 0; text shows n/a for an empty eligible
   attack set. Category friction ratios with no benign observations use numeric
   zero placeholders, not claims of measured zero friction.
+- **Encoded telemetry apparent false-positive rate**: benign PostToolUse
+  responses with any decoded-content hint divided by benign responses actually
+  scanned under the source policy. A response counts once, regardless of hint
+  count. Non-tainting sources are excluded from the denominator. Limited scans
+  remain in the denominator and are reported separately; no scans means n/a.
+  Candidate decoding and binary rejection are not hints. Benign workflow labels
+  are not independent labels of blob semantics, so this is a response flag rate
+  on the authored corpus rather than a general detector precision estimate.
+  These counters never change action metrics, expectations or the CI gate.
 - **CI gate**: exit 0 only if there are no unexpected expectation mismatches;
   declared harmful-step misses are visible expected failures. Wrong decisions or
   optional rule IDs on other steps exit 1. Invalid corpus/infrastructure/output
