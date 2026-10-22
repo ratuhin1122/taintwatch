@@ -80,6 +80,8 @@ type Session struct {
 // Options configures a store. Zero retention/lock timeout selects the defaults;
 // negative durations are invalid. Home overrides TAINTWATCH_HOME and XDG paths.
 type Options struct {
+	// Now supplies a deterministic storage clock for isolated replay. Nil uses time.Now.
+	Now           func() time.Time
 	AuditPath     string
 	AuditMaxBytes int64
 	AuditKeep     int
@@ -171,6 +173,9 @@ func New(opts Options) (*Store, error) {
 		opts.LockTimeout = DefaultLockTimeout
 	}
 	s := &Store{home: home, sessions: filepath.Join(home, "sessions"), retention: opts.Retention, lockTimeout: opts.LockTimeout, now: time.Now}
+	if opts.Now != nil {
+		s.now = opts.Now
+	}
 	s.auditMaxBytes = opts.AuditMaxBytes
 	s.auditKeep = opts.AuditKeep
 	auditPath := opts.AuditPath

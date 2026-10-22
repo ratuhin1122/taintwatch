@@ -25,6 +25,8 @@ jobs:
         run: make build test lint VERSION=ci
       - name: Check injected version
         run: test "$(./build/taintwatch version)" = ci
+      - name: Gate corpus action expectations
+        run: ./build/taintwatch eval run --markdown
       - name: Lint POSIX launcher
         if: runner.os == 'Linux'
         run: shellcheck -s sh bin/taintwatch-launcher scripts/release-assets.sh

@@ -230,13 +230,19 @@ func check(s Scenario) error {
 // Validate walks a corpus root read-only. It does not load operator policy,
 // create state, replay hooks, run shell commands, or contact any endpoint.
 func Validate(root string) (Summary, error) {
+	_, sum, err := load(root)
+	return sum, err
+}
+
+func load(root string) ([]Case, Summary, error) {
+	var cases []Case
 	var sum Summary
 	info, err := os.Lstat(root)
 	if err != nil {
-		return sum, err
+		return nil, sum, err
 	}
 	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-		return sum, errors.New("corpus root must be a real directory")
+		return nil, sum, errors.New("corpus root must be a real directory")
 	}
 	seen := map[string]bool{}
 	total := int64(0)
@@ -327,6 +333,7 @@ func Validate(root string) (Summary, error) {
 		if parts[0] == "benign" && adverse {
 			bad("benign action expectations must be allow; do not encode current false positives as desired behavior")
 		}
+		cases = append(cases, Case{Class: parts[0], Scenario: s})
 		if parts[0] == "attacks" {
 			sum.Attacks++
 		} else {
@@ -349,5 +356,5 @@ func Validate(root string) (Summary, error) {
 	if sum.Attacks == 0 || sum.Benign == 0 {
 		issues = append(issues, errors.New("corpus requires at least one valid attack and one valid benign scenario"))
 	}
-	return sum, errors.Join(issues...)
+	return cases, sum, errors.Join(issues...)
 }

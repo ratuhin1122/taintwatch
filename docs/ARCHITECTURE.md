@@ -10,6 +10,8 @@ flowchart TD
     Claude["Claude Code hook event: JSON on stdin"] --> Input["hookio: bounded, tolerant input decoding"]
     Input --> Pre["hook pre: normalize attempted action"]
     Input --> Post["hook post: normalize completed tool source"]
+    Eval["eval run: ordered corpus events, isolated runtime"] --> Pre
+    Eval --> Post
     Policy["policy: built-ins → user → guarded project merge"] --> Rules
     Policy --> Taint
     Policy -->|"Retention and audit settings"| State
@@ -38,6 +40,12 @@ Transport is limited to 8 MiB, unknown fields are tolerated, and tool results
 remain opaque. In particular, WebFetch provenance does not depend on a guessed
 response-body schema. Real capture confirmation remains pending in
 [ASSUMPTIONS.md](ASSUMPTIONS.md); the spike is an independent throwaway module.
+
+Pre/post processing lives in `internal/hooks`, shared by the CLI handlers and
+`internal/eval`. Normal hooks use production policy/storage loaders; evaluation
+injects built-ins, per-scenario private state and a fixed storage clock through
+Go dependencies, with no public policy-bypass switch. Replay never executes the
+proposed tools. See [EVAL.md](EVAL.md) for metrics and CI gate semantics.
 
 PreToolUse loads current state, derives shell facts for Bash, and evaluates the
 ordered Go rule table. Clean benign decisions emit `{}` so Claude Code's normal

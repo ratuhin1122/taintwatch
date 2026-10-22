@@ -23,6 +23,7 @@ func TestEvalValidateCLI(t *testing.T) {
 		code int
 	}{
 		{[]string{"eval", "replay"}, 2}, {[]string{"eval", "validate", "--unknown"}, 2}, {[]string{"eval", "validate", "a", "b"}, 2}, {[]string{"eval", "validate", filepath.Join(t.TempDir(), "missing")}, 1},
+		{[]string{"eval", "run", "--json", "--markdown"}, 2}, {[]string{"eval", "run", "--unknown"}, 2},
 	} {
 		out.Reset()
 		errout.Reset()
