@@ -28,6 +28,9 @@ type Network struct {
 
 // Result retains structural facts without executing expansions or reading scripts.
 type Result struct {
+	// AST is the parsed root; consumers must treat it as read-only. Flattened
+	// commands remain useful for extraction, but cannot establish data flow.
+	AST                                           *syntax.File
 	Commands                                      []Command
 	Redirections                                  []Redirect
 	Reads, Writes, URLs, Hosts                    []string
@@ -54,6 +57,7 @@ func parse(source string, depth int) (r Result) {
 	if err != nil {
 		return Result{Unparseable: true, Uncertain: true}
 	}
+	r.AST = f
 	syntax.Walk(f, func(n syntax.Node) bool {
 		switch v := n.(type) {
 		case *syntax.CallExpr:
@@ -80,7 +84,14 @@ func parse(source string, depth int) (r Result) {
 				found := false
 				for i, a := range c.Args {
 					if strings.HasPrefix(a, "-") && strings.Contains(a, "c") && i+1 < len(c.Args) {
-						r.merge(parse(c.Args[i+1], depth+1))
+						// Expansions are not literal shell source. Re-parsing the
+						// <dynamic> placeholder creates a false syntax failure.
+						index := len(v.Args) - len(words) + i + 2
+						if code, ok := literal(v.Args[index]); ok {
+							r.merge(parse(code, depth+1))
+						} else {
+							r.Uncertain = true
+						}
 						found = true
 						break
 					}
@@ -179,6 +190,9 @@ func literal(w *syntax.Word) (string, bool) {
 	}
 	return parts(w.Parts, false)
 }
+
+// Literal resolves static Bash quoting without performing expansions.
+func Literal(w *syntax.Word) (string, bool) { return literal(w) }
 func parts(ps []syntax.WordPart, quoted bool) (string, bool) {
 	var b strings.Builder
 	ok := true

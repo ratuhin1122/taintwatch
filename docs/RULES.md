@@ -30,6 +30,34 @@ common wrappers are recognized. Literal shell `-c` scripts and eval are inspecte
 recursively, capped at eight levels; input is capped at 64 KiB. Unresolved
 expansions and parse failures ask in tainted sessions through TW008.
 
+## TW007: decode and execute (M2.4)
+
+`internal/detect/decoderun` uses the retained Bash AST, not the flattened command
+list. It follows decoder stdout through connected pipelines, command/process
+substitutions, here-strings, executable heredoc input, and simple variable
+assignments into eval, source, shell `-c`, or interpreter script input. Supported
+decoders include base64 `-d`/`--decode`/`-D`, xxd `-r` (including `-r -p`), and
+openssl `enc -d`. Interpreter sinks include sh/bash/zsh/dash/ksh, Python versions,
+node/nodejs, perl and ruby. Static quoting and common wrappers are resolved.
+
+Literal Python `-c` and Node `-e`/`--eval` arguments receive a bounded expression
+scan that tracks decoder results into execution calls, including simple local
+assignments. This scanner understands call nesting and skips comments/quoted
+data; it is not a complete Python or JavaScript parser. It does not decode
+payloads, execute scripts, import modules, or inspect file contents.
+
+Default matches always ask, in clean and tainted sessions, with the reason
+`This command decodes data and executes it`. Explicit policy overrides still
+apply as documented above. Download-to-execution remains covered with a separate
+factual download reason. All detector evidence is constant text, without payloads.
+
+Redirection to a regular output file, a later unrelated shell command, encoding
+without a decode flag, printing decoded data, and passing decoded stdin to an
+interpreter running an independent literal script do not by themselves match
+TW007. Other rules can still ask about those actions, particularly TW008 in a
+tainted session. See [LIMITATIONS.md](LIMITATIONS.md); benign-corpus false-positive
+measurement is deferred to M3, not inferred from the unit cases.
+
 Package manifests are protected conservatively even when the proposed content
 does not contain scripts. `truncate` asks for any operand unless a caller supplies
 a tracked-file list; hooks do not spawn Git. Self-protection covers conventional

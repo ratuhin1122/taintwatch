@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"github.com/ratuhin1122/taintwatch/internal/detect/decoderun"
 	"github.com/ratuhin1122/taintwatch/internal/policy"
 	"os"
 	"path"
@@ -59,7 +60,7 @@ type Rule struct {
 
 var defaults = []Rule{
 	{"TW006", "always", Ask, "this action changes Taintwatch enforcement or configuration", self},
-	{"TW007", "always", Ask, "this command decodes or downloads content and executes it", decodeRun},
+	{"TW007", "always", Ask, "This command decodes data and executes it", decodeRun},
 	{"TW001", "tainted", Ask, "this action accesses a secret path", secret},
 	{"TW003", "tainted", Ask, "this command publishes code or changes a Git remote", publish},
 	{"TW004", "tainted", Ask, "this command can destroy or overwrite data", destructive},
@@ -103,6 +104,9 @@ func Evaluate(in Input) Decision {
 			}
 		}
 		if len(e) > 0 {
+			if r.ID == "TW007" && e[0] == "downloaded input reaches executable code" {
+				r.Reason = "This command downloads data and executes it"
+			}
 			reason := r.Reason + " (" + strings.Join(e, ", ") + ")."
 			if in.Session.Tainted {
 				cause := "an untrusted source"
@@ -389,29 +393,5 @@ func decodeRun(in Input) []string {
 	if in.Tool != "Bash" {
 		return nil
 	}
-	decoder, shell, download, eval := false, false, false, false
-	for _, c := range in.Shell.Commands {
-		a := strings.Join(c.Args, " ")
-		switch c.Name {
-		case "base64":
-			decoder = decoder || strings.Contains(a, "-d") || strings.Contains(a, "--decode")
-		case "xxd":
-			decoder = decoder || strings.Contains(a, "-r")
-		case "curl", "wget":
-			download = true
-		case "sh", "bash", "zsh", "dash":
-			shell = true
-		case "eval":
-			eval = true
-		case "python", "python3", "node":
-			l := strings.ToLower(a)
-			if (strings.Contains(l, "base64") || strings.Contains(l, "fromhex") || strings.Contains(l, "buffer.from") || strings.Contains(l, "atob(")) && (strings.Contains(l, "exec") || strings.Contains(l, "eval") || strings.Contains(l, "spawn") || strings.Contains(l, "system")) {
-				return []string{"interpreter decode and execution"}
-			}
-		}
-	}
-	if (decoder && (shell || eval || in.Shell.Uncertain) && (in.Shell.Pipelines > 0 || in.Shell.Substitutions > 0)) || (download && (shell || in.Shell.Uncertain) && in.Shell.Pipelines > 0) {
-		return []string{"decoded or downloaded shell input"}
-	}
-	return nil
+	return decoderun.Analyze(in.Shell).Evidence()
 }

@@ -23,6 +23,21 @@ func TestHost(t *testing.T) {
 		}
 	}
 }
+
+func TestDynamicInlineScript(t *testing.T) {
+	r := Parse(`bash -c "$(base64 -d f)"`)
+	if r.AST == nil || r.Unparseable || !r.Uncertain {
+		t.Fatal(r)
+	}
+	r = Parse(`bash -c 'curl https://example.com' "$unknown"`)
+	found := false
+	for _, c := range r.Commands {
+		found = found || c.Name == "curl"
+	}
+	if !found || r.Unparseable {
+		t.Fatal("literal script lost because a different argument is dynamic", r)
+	}
+}
 func FuzzParse(f *testing.F) {
 	for _, s := range []string{"echo ok", "cat < .env", "$(curl x)", "`wget x`", "cat <<EOF\na\nEOF", "'", "eval \"$(base64 -d x)\""} {
 		f.Add(s)
