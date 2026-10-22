@@ -1,0 +1,9 @@
+Session prompt-session — 1 recent decision(s)
+
+2026-10-22 15:00:00 UTC — Recorded prompt telemetry: prompt [prompt.telemetry]
+Why: Prompt presentation and pasted-content hints recorded; no enforcement.
+Content hint (informational): zero-width; count=1; excerpt=<U+200B>
+Pasted-content hints (informational): fenced blocks=1; log-like lines=40; long log=true.
+Taint: unchanged (prompt telemetry only).
+
+Asks in retained history: 0 (older rotated records may have expired).

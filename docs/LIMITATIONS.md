@@ -5,6 +5,18 @@
   because no authenticated per-ask signal is documented. See [approvals.md](approvals.md).
 - Real Claude Code payloads and exact product transport structs remain unconfirmed.
 - Session-level taint tracking is coarse; content classifiers are telemetry only.
+  Hidden-content hints scan at most 1 MiB of untrusted response string values and
+  never change decisions. They use presentation heuristics, not rendered layout
+  or full Unicode/Markdown analysis. See [HIDDEN-CONTENT.md](HIDDEN-CONTENT.md).
+- A single prompt blob cannot reliably separate the user's instruction from
+  pasted content. UserPromptSubmit scans only the first 1 MiB with the hidden-text
+  detector and a simple fenced-block/long-log heuristic. These are informational
+  hints, not proof of provenance or prompt injection; optional pasted-content
+  markers are not authenticated. Prompt telemetry never changes taint, approvals,
+  policy, permission decisions, or model context. It emits no stdout and exits 0
+  even for closed-mode errors, panic recovery, or a deadline. Prompt contents
+  and log lines are omitted from audit; only counters and safe hidden-text hints
+  are stored. See [PROMPT-TELEMETRY.md](PROMPT-TELEMETRY.md).
 - Product platforms: macOS/Linux amd64/arm64. Windows is best-effort through WSL.
 - Hook performance is not yet measured; the eventual typical target is under 50 ms.
 - State writes serialize through a bounded store lock and scan for expiry. State

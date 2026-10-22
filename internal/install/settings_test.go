@@ -77,6 +77,7 @@ func TestUninstallPreservesEditsAndUnownedEntries(t *testing.T) {
 		t.Fatal(e)
 	}
 	got, _, _ := readObject(p)
+	delete(h, "UserPromptSubmit") // The untouched owned telemetry hook is removed.
 	if !reflect.DeepEqual(v, got) {
 		t.Fatal("removed user edited or preexisting hook")
 	}

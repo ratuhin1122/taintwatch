@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ratuhin1122/taintwatch/internal/detect/hidden"
+	"github.com/ratuhin1122/taintwatch/internal/detect/pasted"
 	"github.com/ratuhin1122/taintwatch/internal/state"
 )
 
@@ -14,21 +16,23 @@ import (
 // the completed call is not blocked; it is not a PreToolUse permission approval.
 // StateKnown disambiguates a clean snapshot from an unavailable state on errors.
 type Record struct {
-	TS             time.Time `json:"ts"`
-	Session        string    `json:"session"`
-	Hook           string    `json:"hook"`
-	Tool           string    `json:"tool"`
-	Decision       string    `json:"decision"`
-	Rule           string    `json:"rule"`
-	Reason         string    `json:"reason"`
-	Who            string    `json:"who,omitempty"`
-	Tainted        bool      `json:"tainted"`
-	StateKnown     bool      `json:"state_known"`
-	TaintSources   []string  `json:"taint_sources"`
-	InputSummary   string    `json:"input_summary"`
-	FailMode       string    `json:"fail_mode"`
-	Evidence       []string  `json:"evidence,omitempty"`
-	PolicyWarnings []string  `json:"policy_warnings,omitempty"`
+	TS             time.Time      `json:"ts"`
+	Session        string         `json:"session"`
+	Hook           string         `json:"hook"`
+	Tool           string         `json:"tool"`
+	Decision       string         `json:"decision"`
+	Rule           string         `json:"rule"`
+	Reason         string         `json:"reason"`
+	Who            string         `json:"who,omitempty"`
+	Tainted        bool           `json:"tainted"`
+	StateKnown     bool           `json:"state_known"`
+	TaintSources   []string       `json:"taint_sources"`
+	InputSummary   string         `json:"input_summary"`
+	FailMode       string         `json:"fail_mode"`
+	Evidence       []string       `json:"evidence,omitempty"`
+	PolicyWarnings []string       `json:"policy_warnings,omitempty"`
+	Hidden         *hidden.Report `json:"hidden,omitempty"`
+	Pasted         *pasted.Report `json:"pasted,omitempty"`
 }
 
 // Sink abstracts secure storage so record construction can be tested separately.
@@ -83,6 +87,15 @@ func Write(sink Sink, record Record) error {
 	return nil
 }
 func sanitize(record Record) Record {
+	if record.Hidden != nil {
+		h := *record.Hidden
+		h.Findings = append([]hidden.Finding(nil), h.Findings...)
+		for i := range h.Findings {
+			h.Findings[i].Type = hidden.Visible(Redact(h.Findings[i].Type))
+			h.Findings[i].Excerpt = hidden.Visible(Redact(h.Findings[i].Excerpt))
+		}
+		record.Hidden = &h
+	}
 	record.PolicyWarnings = append([]string(nil), record.PolicyWarnings...)
 	for i := range record.PolicyWarnings {
 		record.PolicyWarnings[i] = Redact(record.PolicyWarnings[i])
@@ -96,6 +109,9 @@ func sanitize(record Record) Record {
 	record.Who = Redact(record.Who)
 	// Do not accept accidental raw-input summaries from callers at this stage.
 	record.InputSummary = "tool arguments and response omitted"
+	if record.Hook == "UserPromptSubmit" {
+		record.InputSummary = "prompt content omitted"
+	}
 	record.TaintSources = append([]string{}, record.TaintSources...)
 	for i := range record.TaintSources {
 		record.TaintSources[i] = Redact(record.TaintSources[i])

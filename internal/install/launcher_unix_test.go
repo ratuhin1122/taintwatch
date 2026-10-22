@@ -17,7 +17,7 @@ func TestLauncherFailureModes(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	for _, kind := range []string{"pre", "post"} {
+	for _, kind := range []string{"pre", "post", "prompt"} {
 		for _, mode := range []string{"open", "closed"} {
 			t.Run(kind+mode, func(t *testing.T) {
 				dir := t.TempDir()
@@ -41,10 +41,10 @@ func TestLauncherFailureModes(t *testing.T) {
 				if e != nil {
 					t.Fatal(e)
 				}
-				if mode == "open" && len(b) != 0 {
+				if (mode == "open" || kind == "prompt") && len(b) != 0 {
 					t.Fatal(string(b))
 				}
-				if mode == "closed" && !strings.Contains(string(b), map[string]string{"pre": "permissionDecision", "post": "additionalContext"}[kind]) {
+				if mode == "closed" && kind != "prompt" && !strings.Contains(string(b), map[string]string{"pre": "permissionDecision", "post": "additionalContext"}[kind]) {
 					t.Fatal(string(b))
 				}
 				if kind == "post" && strings.Contains(string(b), "permissionDecision") {

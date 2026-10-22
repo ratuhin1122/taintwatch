@@ -23,7 +23,7 @@ func main() {
 	// Bound the entire command, including a stuck output pipe or filesystem call.
 	// This final watchdog cannot reliably emit context through a broken transport.
 	var watchdog *time.Timer
-	if len(os.Args) >= 3 && os.Args[1] == "hook" && (os.Args[2] == "post" || os.Args[2] == "pre") {
+	if len(os.Args) >= 3 && os.Args[1] == "hook" && (os.Args[2] == "post" || os.Args[2] == "pre" || os.Args[2] == "prompt") {
 		watchdogClosed.Store(initialClosed(os.Args[3:]))
 		pre := os.Args[2] == "pre"
 		watchdog = time.AfterFunc(hookHardTimeout, func() {
@@ -99,7 +99,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 func runHook(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
 		fmt.Fprintln(stdout, "Usage: taintwatch hook <pre|post|prompt|session-start> [--help]")
-		fmt.Fprintln(stdout, "Pre checks actions; post records source taint; prompt and session-start are stubs.")
+		fmt.Fprintln(stdout, "Pre checks actions; post records source taint; prompt records telemetry; session-start is a stub.")
 		return exitOK
 	}
 	if len(args) == 0 {
@@ -111,6 +111,9 @@ func runHook(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	if args[0] == "pre" {
 		return runPre(args[1:], stdin, stdout, stderr)
+	}
+	if args[0] == "prompt" {
+		return runPrompt(args[1:], stdin, stdout, stderr)
 	}
 	switch args[0] {
 	case "pre", "post", "prompt", "session-start":

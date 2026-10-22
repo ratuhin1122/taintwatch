@@ -1,0 +1,9 @@
+Session hidden-session — 1 recent decision(s)
+
+2026-10-22 14:02:00 UTC — Recorded completed tool call: WebFetch [source.web]
+Why: WebFetch returned untrusted content.
+Content hint (informational): zero-width; count=2; excerpt=<U+200B>
+Content scan: prefix only (1048576 bytes); response was truncated for scanning.
+Taint: yes; sources: web.
+
+Asks in retained history: 0 (older rotated records may have expired).

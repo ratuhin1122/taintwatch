@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
+	"github.com/ratuhin1122/taintwatch/internal/detect/hidden"
 	"github.com/ratuhin1122/taintwatch/internal/hookio"
 	"github.com/ratuhin1122/taintwatch/internal/policy"
 	"github.com/ratuhin1122/taintwatch/internal/shellparse"
@@ -145,6 +146,12 @@ func processPostContext(ctx context.Context, stdin io.Reader, override, profile 
 	m, err := classifier.Classify(in)
 	if err != nil {
 		return failure("source classification")
+	}
+	if m.Tainted {
+		text, truncated := input.ResponseText(hidden.MaxBytes)
+		report := hidden.Scan(text)
+		report.Truncated = report.Truncated || truncated
+		record.Hidden = &report
 	}
 	parseFailed := input.ToolName == "Bash" && shellparse.Parse(args.Command).Unparseable
 	if ctx.Err() != nil {

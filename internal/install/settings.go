@@ -40,6 +40,7 @@ func HookEntries(binary string) map[string]any {
 	for event, mode := range map[string]string{"PreToolUse": "pre", "PostToolUse": "post"} {
 		out[event] = map[string]any{"matcher": "*", "hooks": []any{map[string]any{"type": "command", "command": q + " hook " + mode + " # taintwatch-managed-v1"}}}
 	}
+	out["UserPromptSubmit"] = map[string]any{"hooks": []any{map[string]any{"type": "command", "command": q + " hook prompt # taintwatch-managed-v1"}}}
 	return out
 }
 func readObject(path string) (map[string]any, []byte, error) {
@@ -296,8 +297,11 @@ func PluginWired(root string) bool {
 	if !ok {
 		return false
 	}
-	for event, mode := range map[string]string{"PreToolUse": "pre", "PostToolUse": "post"} {
+	for event, mode := range map[string]string{"PreToolUse": "pre", "PostToolUse": "post", "UserPromptSubmit": "prompt"} {
 		want := map[string]any{"matcher": "*", "hooks": []any{map[string]any{"type": "command", "command": "TAINTWATCH_NO_BOOTSTRAP=1 sh \"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher\" hook " + mode}}}
+		if event == "UserPromptSubmit" {
+			delete(want, "matcher")
+		}
 		found := false
 		groups, _ := h[event].([]any)
 		for _, group := range groups {

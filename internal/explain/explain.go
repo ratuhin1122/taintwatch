@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
+	"github.com/ratuhin1122/taintwatch/internal/detect/hidden"
 	"github.com/ratuhin1122/taintwatch/internal/state"
 )
 
@@ -47,9 +48,28 @@ func Render(w io.Writer, h audit.History, asJSON bool) error {
 		if r.Hook == "PostToolUse" && r.Decision == "allow" {
 			label = "Recorded completed tool call"
 		}
+		if r.Hook == "UserPromptSubmit" {
+			label = "Recorded prompt telemetry"
+		}
 		fmt.Fprintf(&b, "\n%s UTC — %s: %s [%s]\n", r.TS.UTC().Format("2006-01-02 15:04:05"), label, text(r.Tool), text(r.Rule))
 		fmt.Fprintf(&b, "Why: %s\n", text(r.Reason))
-		if !r.StateKnown {
+		if r.Hidden != nil {
+			for _, f := range r.Hidden.Findings {
+				fmt.Fprintf(&b, "Content hint (informational): %s; count=%d; excerpt=%s\n", text(hidden.Visible(f.Type)), f.Count, text(hidden.Visible(f.Excerpt)))
+			}
+			if r.Hidden.Truncated {
+				fmt.Fprintf(&b, "Content scan: prefix only (%d bytes); response was truncated for scanning.\n", r.Hidden.BytesScanned)
+			}
+		}
+		if r.Pasted != nil {
+			fmt.Fprintf(&b, "Pasted-content hints (informational): fenced blocks=%d; log-like lines=%d; long log=%t.\n", r.Pasted.FencedBlocks, r.Pasted.LogLines, r.Pasted.LongLog)
+			if r.Pasted.Truncated {
+				fmt.Fprintf(&b, "Pasted-content scan: prefix only (%d bytes).\n", r.Pasted.BytesScanned)
+			}
+		}
+		if r.Hook == "UserPromptSubmit" {
+			fmt.Fprintln(&b, "Taint: unchanged (prompt telemetry only).")
+		} else if !r.StateKnown {
 			fmt.Fprintln(&b, "Taint: unknown (state was unavailable).")
 		} else if r.Tainted {
 			fmt.Fprintf(&b, "Taint: yes; sources: %s.\n", sources(r.TaintSources))

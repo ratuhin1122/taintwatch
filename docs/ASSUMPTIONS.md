@@ -67,6 +67,7 @@ ask, with deny available only through explicit user policy.
 | Tool matchers | **verified (https://code.claude.com/docs/en/hooks#matcher-patterns)**: match `tool_name`; `*`, empty or omitted matches all. Current docs distinguish exact names/lists (`Read`, `Edit|Write`, `Edit, Write`) from unanchored JavaScript regex when other characters occur. Spike uses explicit anchors: `^(Read|WebFetch|Bash|mcp__.*)$`. |
 | MCP names | **verified (https://code.claude.com/docs/en/hooks#match-mcp-tools)**: `mcp__<server>__<tool>`; plugin servers use `mcp__plugin_<plugin-name>_<server-name>__<tool>`. Names alone are not provenance guarantees. |
 | UserPromptSubmit input | **verified (https://code.claude.com/docs/en/hooks#userpromptsubmit-input)**: common envelope plus string `prompt`. No matcher support. **unverified**: actual optional fields and pasted-content representation on user's version. |
+| UserPromptSubmit telemetry contract (M2.6, checked 2026-10-22) | **verified (https://code.claude.com/docs/en/hooks#userpromptsubmit-decision-control)**: stdout text or `additionalContext` adds model context; `decision:"block"` or exit 2 can block. Taintwatch emits nothing and exits 0, including on telemetry errors. **verified (https://code.claude.com/docs/en/hooks#userpromptsubmit-input)**: docs describe expanded pasted text and optional `<pasted_content id="…">` wrappers. **unverified**: actual delivery/wrappers on the user's version; no authenticity or instruction/data separation is inferred. |
 | SessionStart input | **verified (https://code.claude.com/docs/en/hooks#sessionstart-input)**: common envelope plus `source` (`startup`, `resume`, `clear`, `compact`, `fork`); optional `model`, `agent_type`, `session_title`. **unverified**: actual field availability on user's version. |
 
 ## Plugin packaging
@@ -152,7 +153,8 @@ overflow. Exactly one JSON object is accepted. Reader errors are wrapped; malfor
 or oversized payloads return errors and no partially decoded event. A byte cap
 cannot bound elapsed time for a stalled `io.Reader`; hook entry points must also
 apply process/deadline controls. Pre/post commands use this package and process
-watchdogs; prompt/session-start remain stubs. Plugin packaging does not establish
+watchdogs; prompt now uses a separate always-open telemetry handler with a process
+watchdog, while session-start remains a stub. Plugin packaging does not establish
 real-session compatibility confirmation.
 
 `Result` constructors keep output JSON inside `internal/hookio`; all structured

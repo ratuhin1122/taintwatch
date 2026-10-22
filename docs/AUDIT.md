@@ -26,6 +26,20 @@ not universal secret detection; input omission is the primary defense. Readers
 also redact older metadata before displaying it. Old files are not retroactively
 rewritten. Terminal control characters are escaped in text output.
 
+Untrusted post-hook responses can add a `hidden` report: scanned byte count,
+truncation status, and aggregated presentation hints (type/count/short excerpt).
+Excerpts use codepoints or structural/style hints, never hidden bodies, whole
+words, or link targets. They receive the same audit redaction and visible-control
+rendering. These hints appear in `explain` and never change decisions. See
+[HIDDEN-CONTENT.md](HIDDEN-CONTENT.md) for coverage and limits.
+
+UserPromptSubmit writes `decision: "observe"` and `rule: "prompt.telemetry"`.
+Its `hidden` report covers presentation hints; `pasted` contains fenced-block
+and log-like-line counters plus a long-log flag and prefix bounds. These records
+do not imply an allow/ask decision or a session taint snapshot. They never change
+session files or approval counts. Prompt contents are omitted. See
+[PROMPT-TELEMETRY.md](PROMPT-TELEMETRY.md).
+
 ```sh
 taintwatch explain
 taintwatch explain --session ID --last 20

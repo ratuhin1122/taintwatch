@@ -1,6 +1,7 @@
 {
   "hooks": {
     "PreToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "TAINTWATCH_NO_BOOTSTRAP=1 sh \"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher\" hook pre"}]}],
-    "PostToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "TAINTWATCH_NO_BOOTSTRAP=1 sh \"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher\" hook post"}]}]
+    "PostToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "TAINTWATCH_NO_BOOTSTRAP=1 sh \"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher\" hook post"}]}],
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "TAINTWATCH_NO_BOOTSTRAP=1 sh \"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher\" hook prompt"}]}]
   }
 }

@@ -27,7 +27,8 @@ For a marketplace installation, add this repository with Claude's
 `/plugin install taintwatch@ratuhin1122-plugins`. Local testing can use
 `/plugin marketplace add /absolute/path/to/taintwatch` first. Repository hosting
 and published release availability must be established separately; this task
-does not publish anything. Confirm both hooks in `/hooks`, then run the
+does not publish anything. Confirm PreToolUse, PostToolUse, and the telemetry-only
+UserPromptSubmit hook in `/hooks`, then run the
 capture experiment in `spike/` to check real delivery. Commands are
 `/taintwatch:status`, `/taintwatch:explain`, `/taintwatch:doctor`, and
 `/taintwatch:allow`. The last command previews a policy diff and waits for an
@@ -68,6 +69,7 @@ override it defaults open only when no user/project policy file exists; any
 policy file, unreadable policy, or explicit unknown mode conservatively selects
 closed. Closed PreToolUse emits the documented ask JSON with exit 0; PostToolUse
 always exits 0 and cannot undo a tool call. Non-hook bootstrap failure exits 1.
+UserPromptSubmit fallback always exits 0 with no stdout, regardless of fail mode.
 This small static bootstrap response is the sole shell protocol fallback;
 product Go hook responses still go through `internal/hookio`.
 
@@ -83,7 +85,7 @@ taintwatch uninstall
 ```
 
 Install uses `~/.claude/settings.json`, or `$CLAUDE_CONFIG_DIR/settings.json`.
-It adds dedicated pre/post groups using the absolute current executable path,
+It adds dedicated pre/post/prompt groups using the absolute current executable path,
 preserves unrelated JSON keys/groups, saves a mode-0600 byte-for-byte backup
 before changing existing settings, and atomically replaces the settings file.
 An adjacent mode-0600 `.taintwatch-install.json` receipt owns only entries it
