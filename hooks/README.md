@@ -1,4 +1,5 @@
 # Product hook wiring
 
-Reserved for product `hooks.json`. No product hooks are registered by this scaffold.
-Use `spike/hooks/hooks.json` only for the documented capture experiment.
+`hooks.json` registers all-tool PreToolUse and PostToolUse handlers through the
+plugin launcher. SessionStart is omitted while that CLI handler remains a stub.
+Use `spike/hooks/hooks.json` separately for the capture experiment.

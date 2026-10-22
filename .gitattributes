@@ -2,3 +2,5 @@
 testdata/hookio/** text eol=lf
 testdata/explain/** text eol=lf
 scripts/*.sh text eol=lf
+bin/taintwatch-launcher text eol=lf
+testdata/doctor/** text eol=lf

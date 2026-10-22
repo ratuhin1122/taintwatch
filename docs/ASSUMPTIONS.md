@@ -151,9 +151,9 @@ The whole input, including whitespace, is capped at 8 MiB plus one byte to detec
 overflow. Exactly one JSON object is accepted. Reader errors are wrapped; malformed
 or oversized payloads return errors and no partially decoded event. A byte cap
 cannot bound elapsed time for a stalled `io.Reader`; hook entry points must also
-apply process/deadline controls. M1.4 wires the post command through this package
-and adds a process watchdog; other hook handlers remain stubs. No automatic plugin
-registration or real-session compatibility confirmation is implied.
+apply process/deadline controls. Pre/post commands use this package and process
+watchdogs; prompt/session-start remain stubs. Plugin packaging does not establish
+real-session compatibility confirmation.
 
 `Result` constructors keep output JSON inside `internal/hookio`; all structured
 outputs, including deny, use exit 0. Its zero value emits `{}`. `Allow()` includes
@@ -168,3 +168,43 @@ not cover every way context enters a session (for example direct file mentions).
 
 Spike performance: not yet measured. Real-session compatibility: not yet measured.
 Supported product target: macOS/Linux amd64/arm64; Windows best-effort through WSL.
+
+## M2.2 packaging verification (2026-10-22)
+
+- Manifest name/version/description/author/homepage/repository/license/keywords:
+  **verified (https://code.claude.com/docs/en/plugins/manifest-reference)**.
+  Default `commands/` and `hooks/hooks.json` discovery and quoted plugin-root
+  substitution in shell hooks: **verified (same source URL)**. Markdown command
+  bodies also substitute `${CLAUDE_PLUGIN_ROOT}`; Bash tool processes do not
+  automatically inherit that variable. Doctor's command exports it explicitly.
+- Marketplace name/description/owner/plugins, entry name/source/description/category/tags,
+  relative `"./"`, and reserved-name restrictions: **verified
+  (https://code.claude.com/docs/en/plugins/marketplace-reference)**.
+  The chosen marketplace is `ratuhin1122-plugins`.
+- User settings at `~/.claude/settings.json`, strict JSON, and
+  `CLAUDE_CONFIG_DIR` override: **verified
+  (https://code.claude.com/docs/en/settings)**. Hook groups use the previously
+  verified hooks reference schema; installer receipt fields are Taintwatch's
+  private format, never Claude settings keys.
+- Flat Markdown command files and `description` frontmatter: **verified
+  (https://code.claude.com/docs/en/plugins/manifest-reference)** and
+  **verified (https://code.claude.com/docs/en/slash-commands)**. Commands intentionally
+  grant no pre-approved tools. `allow` is an interactive review workflow, not a
+  transport permission or unconditional approval.
+- Local validation: installed Claude Code `2.1.175` accepted plugin.json and
+  marketplace.json with `claude plugin validate <manifest-path>` on 2026-10-22.
+  Marketplace validation initially warned about its optional missing catalog
+  description; the verified top-level description field was then added.
+  Passing hooks/hooks.json directly to this command is not a supported separate
+  validation mode: it interprets that file as a plugin manifest. The plugin uses
+  the verified default hooks path instead.
+- Exact minimum version for the full feature combination: **unverified**.
+  Doctor always reports this limitation rather than inventing a version floor.
+  Real plugin installation, real-session hook delivery, real payload fixtures,
+  hosted repository availability, and published v0.1.0 release assets:
+  **unverified**. No release was published by this task.
+- Launcher checksum validation, attempt marker, platform asset naming, CLI
+  install receipt/backup, and bootstrap failure policy are implementation choices,
+  not Claude plugin schema claims. See `docs/install.md`. The missing-binary
+  shell emits only the already verified fixed ask/context envelopes. All product
+  Go hook JSON still comes from `internal/hookio`.

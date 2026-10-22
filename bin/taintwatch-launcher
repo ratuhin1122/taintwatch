@@ -1,0 +1,74 @@
+#!/bin/sh
+# Bootstrap is deliberately independent of the Go hook protocol implementation.
+set -eu
+umask 077
+version=0.1.0
+root=${CLAUDE_PLUGIN_ROOT:-$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)}
+fail() {
+    printf '%s\n' 'taintwatch: binary unavailable; run taintwatch doctor or install a verified local binary' >&2
+    mode=${TAINTWATCH_FAIL_MODE:-}
+    # Without the binary we cannot safely merge YAML. Existing policy means
+    # unknown fail mode: conservatively ask rather than silently weaken it.
+    if [ -z "$mode" ]; then
+        mode=open
+        if [ -f "${HOME}/.config/taintwatch/policy.yaml" ]; then mode=closed; fi
+        here=$PWD
+        while :; do
+            if [ -f "$here/.taintwatch/policy.yaml" ]; then mode=closed; break; fi
+            [ "$here" != / ] || break
+            here=$(dirname -- "$here")
+        done
+    fi
+    case "$mode:$*" in
+        open:*) ;;
+        *:'hook pre'*)
+            printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"Taintwatch binary is unavailable; enforcement could not run. Confirm this action or repair the installation."}}'
+            ;;
+        *:'hook post'*)
+            printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Taintwatch enforcement is unavailable; confirm sensitive actions with the user until the installation is repaired."}}'
+            ;;
+    esac
+    case "${1:-}" in hook) exit 0;; *) exit 1;; esac
+}
+case $(uname -s) in Linux) os=linux;; Darwin) os=darwin;; *) fail "$@";; esac
+case $(uname -m) in x86_64|amd64) arch=amd64;; aarch64|arm64) arch=arm64;; *) fail "$@";; esac
+asset=taintwatch-$os-$arch
+if [ -x "$root/bin/$asset" ]; then exec "$root/bin/$asset" "$@"; fi
+if command -v taintwatch >/dev/null 2>&1; then exec taintwatch "$@"; fi
+cache_home=${TAINTWATCH_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/taintwatch}
+cache=$cache_home/bootstrap/$version
+for dir in "$cache_home" "$cache_home/bootstrap" "$cache"; do
+    [ ! -L "$dir" ] || fail "$@"
+done
+mkdir -p -- "$cache" || fail "$@"
+chmod 700 "$cache_home" "$cache_home/bootstrap" "$cache" || fail "$@"
+# Persist the attempt before networking. Failed attempts require explicit repair;
+# no future invocation retries downloads, including concurrent hook processes.
+if [ -f "$cache/verified" ] && [ -x "$cache/$asset" ]; then
+    expected=$(cat "$cache/verified") || fail "$@"
+    if command -v sha256sum >/dev/null 2>&1; then actual=$(sha256sum "$cache/$asset" | awk '{print $1}');
+    elif command -v shasum >/dev/null 2>&1; then actual=$(shasum -a 256 "$cache/$asset" | awk '{print $1}');
+    else fail "$@"; fi
+    if [ "$actual" = "$expected" ]; then exec "$cache/$asset" "$@"; fi
+    fail "$@"
+fi
+mkdir -- "$cache/attempted" 2>/dev/null || fail "$@"
+command -v curl >/dev/null 2>&1 || fail "$@"
+base=https://github.com/ratuhin1122/taintwatch/releases/download/v$version
+tmp=$(mktemp -d "$cache/download.XXXXXXXX") || fail "$@"
+trap 'rm -f -- "$tmp/checksums.txt" "$tmp/asset"; rmdir -- "$tmp"' EXIT HUP INT TERM
+curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 3 --max-time 15 --max-filesize 1048576 "$base/checksums.txt" -o "$tmp/checksums.txt" || fail "$@"
+expected=$(awk -v name="$asset" '$2 == name && length($1) == 64 && $1 !~ /[^0-9a-f]/ {print $1}' "$tmp/checksums.txt")
+[ "${#expected}" = 64 ] || fail "$@"
+curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 3 --max-time 15 --max-filesize 67108864 "$base/$asset" -o "$tmp/asset" || fail "$@"
+if command -v sha256sum >/dev/null 2>&1; then actual=$(sha256sum "$tmp/asset" | awk '{print $1}');
+elif command -v shasum >/dev/null 2>&1; then actual=$(shasum -a 256 "$tmp/asset" | awk '{print $1}');
+else fail "$@"; fi
+[ "$actual" = "$expected" ] || fail "$@"
+chmod 700 "$tmp/asset"
+mv -- "$tmp/asset" "$cache/$asset"
+printf '%s\n' "$expected" > "$cache/verified"
+rm -f -- "$tmp/checksums.txt"
+rmdir -- "$tmp"
+trap - EXIT HUP INT TERM
+exec "$cache/$asset" "$@"

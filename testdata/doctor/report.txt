@@ -1,0 +1,4 @@
+PASS binary: version 0.1.0
+WARN hooks: verify plugin hooks with /hooks
+FAIL state: use WSL
+PASS dry-run: WebFetch taints; Read .env requires confirmation (in memory)

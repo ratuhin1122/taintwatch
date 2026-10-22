@@ -1,0 +1,6 @@
+PASS binary: version 0.1.0
+WARN hooks: standalone wiring not found; run taintwatch install, or verify plugin hooks with /hooks
+WARN Claude Code: 2.1.175 (Claude Code); exact minimum for all hook features is unverified; validate and test real hook delivery
+WARN state: directory absent; first hook creates it with mode 0700
+PASS policy: effective policy is valid
+PASS dry-run: WebFetch taints; Read .env requires confirmation (in memory)

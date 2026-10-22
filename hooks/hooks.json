@@ -1,0 +1,6 @@
+{
+  "hooks": {
+    "PreToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher\" hook pre"}]}],
+    "PostToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher\" hook post"}]}]
+  }
+}

@@ -1,11 +1,12 @@
 # Taintwatch
 
-Taintwatch is a planned defense-in-depth plugin for Claude Code, using coarse
+Taintwatch is a defense-in-depth plugin for Claude Code, using coarse
 session-level taint tracking and an audit trail. It does not solve prompt
 injection. Content detectors are telemetry only and will not independently block
 actions.
 
-**Current state: post-tool provenance tracking. Pre-tool restrictions are not implemented yet.**
+**Current state: pre/post hooks, policy loading, audit inspection, and plugin packaging.**
+See [installation and doctor](docs/install.md) for local plugin and standalone setup.
 The hook payload spike remains isolated in its own Go module under `spike/`.
 `internal/hookio` now decodes the documented input envelopes and writes verified
 structured outputs. Real payload confirmation and real-capture golden tests remain
@@ -41,6 +42,9 @@ taintwatch status [--session ID]
 taintwatch policy check [file]
 taintwatch policy show
 taintwatch version [--help]
+taintwatch install
+taintwatch uninstall
+taintwatch doctor
 taintwatch --help
 ```
 

@@ -1,5 +1,5 @@
 # Plugin metadata
 
-Reserved for product `plugin.json` and `marketplace.json`. No product plugin is
-loadable yet. Verified format details are in `docs/ASSUMPTIONS.md`; the separate
-`spike/` plugin is the payload probe.
+Plugin and single-repository marketplace manifests live here. See
+`../docs/install.md` for installation and validation. The separate `spike/`
+plugin remains the real-payload capture probe.

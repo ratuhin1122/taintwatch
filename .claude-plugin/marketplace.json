@@ -1,0 +1,12 @@
+{
+  "name": "ratuhin1122-plugins",
+  "description": "Security plugins maintained by ratuhin1122, including Taintwatch.",
+  "owner": {"name": "ratuhin1122"},
+  "plugins": [{
+    "name": "taintwatch",
+    "source": "./",
+    "description": "Taint tracking and confirmation prompts for sensitive Claude Code actions.",
+    "category": "security",
+    "tags": ["security", "guardrails", "mcp-security"]
+  }]
+}
