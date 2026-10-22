@@ -53,7 +53,13 @@ shows ten decisions (1–1000 configurable), newest first in text. JSON includes
 the session, recent records in chronological order and retained ask count.
 Reasons, rule IDs, historical taint/source information and suggested next steps
 are shown. Approval remains Claude Code's one-time approval UI. Policy allowlist
-overrides are available; a clear-taint CLI remains future work.
+overrides are available; `clear --reason "..."` explicitly clears session taint.
+
+Successful pre-hook decisions now include an optional versioned `replay` snapshot
+of all matching rule IDs (including disabled rules) and a matching-policy digest.
+No raw inputs are added. This supports read-only action/enabled-policy comparisons;
+older records and changed matching criteria remain unreplayable. See
+[REPLAY.md](REPLAY.md) for the command, format and limits.
 
 Status uses current persisted state for that session. Missing state is unknown
 when selecting from audit history. An explicitly requested missing session follows

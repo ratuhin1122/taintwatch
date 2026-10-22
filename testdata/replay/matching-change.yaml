@@ -1,0 +1,10 @@
+version: 1
+sources:
+  read:
+    temp_paths:
+      replace: [/tmp, /var/tmp]
+    downloaded_paths:
+      replace: [/home/eval/Downloads]
+egress:
+  allow_domains:
+    append: [evil.example]

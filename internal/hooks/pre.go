@@ -102,7 +102,8 @@ func Pre(ctx context.Context, reader io.Reader, override string, observe func(st
 	if ctx.Err() != nil {
 		return preFailure(mode, "deadline")
 	}
-	d := rules.Evaluate(input)
+	d, snapshot := rules.EvaluateTraced(input)
+	snapshot.Fingerprint = rules.MatchFingerprint(loaded.Config)
 	if ctx.Err() != nil {
 		return preFailure(mode, "deadline")
 	}
@@ -110,6 +111,11 @@ func Pre(ctx context.Context, reader io.Reader, override string, observe func(st
 	record.Rule = d.RuleID
 	record.Reason = d.Reason
 	record.Evidence = d.Evidence
+	// Successful decisions retain only complete redacted match facts. Error and
+	// incomplete-policy records cannot be promoted into replayable observations.
+	if policyErr == nil {
+		record.Replay = &snapshot
+	}
 	if err := audit.Write(store, record); err != nil {
 		o := preFailure(mode, "audit persistence")
 		if d.Action == rules.Ask {

@@ -44,3 +44,8 @@
 - Closed mode in PostToolUse is advisory only; a completed call cannot be undone.
 - Audit rotation discards older history; ask counts cover retained logs only.
   Redaction is best-effort; tool contents are omitted. See [AUDIT.md](AUDIT.md).
+- Audit replay freezes historical taint and complete rule-match snapshots. It can
+  compare rule actions/enabled flags, but cannot reconstruct omitted inputs,
+  replay older summary-only records, evaluate changed matching/source criteria,
+  or simulate downstream workflow changes. Uncertain records are explicitly
+  unreplayable, not unchanged. See [REPLAY.md](REPLAY.md).

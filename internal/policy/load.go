@@ -28,6 +28,33 @@ type Options struct {
 	NoUser, NoProject                    bool
 }
 
+// LoadStandalone applies just an explicitly supplied trusted file to built-ins.
+// Read-only analysis must not discover user/project layers or environment overrides.
+func LoadStandalone(file string) (Effective, error) {
+	info, err := os.Lstat(file)
+	if err != nil {
+		return Effective{}, err
+	}
+	if !info.Mode().IsRegular() {
+		return Effective{}, fmt.Errorf("candidate policy must be a regular non-symlink file")
+	}
+	e := Effective{Config: Defaults(), Origins: map[string]string{}, Files: []string{}, Ignored: []Ignored{}}
+	e.seedOrigins()
+	absolute, err := filepath.Abs(file)
+	if err != nil {
+		return e, err
+	}
+	doc, err := readDocument(absolute)
+	if err != nil {
+		return e, err
+	}
+	e.Files = append(e.Files, absolute)
+	for _, ch := range doc.changes {
+		e.apply(ch, fmt.Sprintf("%s:%d", absolute, ch.node.Line), false)
+	}
+	return e, nil
+}
+
 // Load returns the last valid, guarded policy even on an error, so callers can
 // apply a previously established fail_mode rather than reverting to open.
 func Load(opts Options) (Effective, error) {

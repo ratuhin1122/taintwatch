@@ -1,0 +1,25 @@
+Policy replay — frozen recorded matches, not a tool/session rerun
+Records: 11; ignored non-pre events: 2; replayed: 6; unchanged: 1
+Decision changes: 4; rule-only changes: 1; unreplayable: 3
+
+Rule TW001
+  line 1 session sample-session at 2001-01-01T00:01:00Z: allow -> ask (default.allow -> TW001)
+
+Rule TW002
+  line 3 session sample-session at 2001-01-01T00:03:00Z: ask -> deny (TW002 -> TW002)
+  line 4 session sample-session at 2001-01-01T00:04:00Z: ask -> deny (TW001 -> TW002)
+
+Rule TW003
+  line 2 session sample-session at 2001-01-01T00:02:00Z: ask -> allow (TW003 -> default.allow)
+
+Rule TW004
+  line 5 session sample-session at 2001-01-01T00:05:00Z: ask -> ask (TW003 -> TW004)
+
+Unreplayable (no decision inferred)
+  line 7 session legacy-session [TW007], was ask: legacy record has no complete rule-match snapshot; raw inputs and other matches were omitted
+  line 8 session sample-session [TW001], was ask: unsupported replay snapshot version
+  line 9 session sample-session [TW002], was ask: historical state is unknown or processing failed
+
+Only action/enabled changes with identical matching/source settings are replayable.
+Historical taint and match facts are held fixed; omitted inputs are never reconstructed.
+No policy, state, log, or original tool files were modified.

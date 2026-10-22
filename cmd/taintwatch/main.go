@@ -55,6 +55,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return exitOK
 	}
 	switch name {
+	case "replay":
+		return runReplay(args[1:], stdout, stderr)
 	case "eval":
 		return runEval(args[1:], stdout, stderr)
 	case "allow", "disallow":
@@ -138,6 +140,6 @@ func runHook(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 func usage(w io.Writer) {
 	fmt.Fprintln(w, "Usage: taintwatch <command> [--help]")
-	fmt.Fprintln(w, "Commands: hook <pre|post|prompt|session-start>, policy <check|show>, eval <validate|run>, explain, status, version, install, uninstall, doctor, allow, disallow, clear")
+	fmt.Fprintln(w, "Commands: hook <pre|post|prompt|session-start>, policy <check|show>, eval <validate|run>, replay, explain, status, version, install, uninstall, doctor, allow, disallow, clear")
 	fmt.Fprintln(w, "Exit codes: 0 success/help; 1 unavailable or failed operation; 2 invalid CLI usage.")
 }

@@ -1,6 +1,7 @@
 package audit
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -9,30 +10,46 @@ import (
 
 	"github.com/ratuhin1122/taintwatch/internal/detect/hidden"
 	"github.com/ratuhin1122/taintwatch/internal/detect/pasted"
+	"github.com/ratuhin1122/taintwatch/internal/rules"
 	"github.com/ratuhin1122/taintwatch/internal/state"
 )
+
+// DecodeRecord reads one stored audit object and reapplies metadata redaction.
+// Tool payloads/old raw input summaries are never recovered from unknown fields.
+func DecodeRecord(data []byte) (Record, error) {
+	var r Record
+	b := bytes.TrimSpace(data)
+	if len(b) == 0 || len(b) > 64<<10 || b[0] != '{' {
+		return r, fmt.Errorf("invalid audit object")
+	}
+	if err := json.Unmarshal(b, &r); err != nil {
+		return r, fmt.Errorf("invalid audit object")
+	}
+	return sanitize(r), nil
+}
 
 // Record is a redacted JSONL observation. A post hook's allow decision means that
 // the completed call is not blocked; it is not a PreToolUse permission approval.
 // StateKnown disambiguates a clean snapshot from an unavailable state on errors.
 type Record struct {
-	TS             time.Time      `json:"ts"`
-	Session        string         `json:"session"`
-	Hook           string         `json:"hook"`
-	Tool           string         `json:"tool"`
-	Decision       string         `json:"decision"`
-	Rule           string         `json:"rule"`
-	Reason         string         `json:"reason"`
-	Who            string         `json:"who,omitempty"`
-	Tainted        bool           `json:"tainted"`
-	StateKnown     bool           `json:"state_known"`
-	TaintSources   []string       `json:"taint_sources"`
-	InputSummary   string         `json:"input_summary"`
-	FailMode       string         `json:"fail_mode"`
-	Evidence       []string       `json:"evidence,omitempty"`
-	PolicyWarnings []string       `json:"policy_warnings,omitempty"`
-	Hidden         *hidden.Report `json:"hidden,omitempty"`
-	Pasted         *pasted.Report `json:"pasted,omitempty"`
+	TS             time.Time       `json:"ts"`
+	Session        string          `json:"session"`
+	Hook           string          `json:"hook"`
+	Tool           string          `json:"tool"`
+	Decision       string          `json:"decision"`
+	Rule           string          `json:"rule"`
+	Reason         string          `json:"reason"`
+	Who            string          `json:"who,omitempty"`
+	Tainted        bool            `json:"tainted"`
+	StateKnown     bool            `json:"state_known"`
+	TaintSources   []string        `json:"taint_sources"`
+	InputSummary   string          `json:"input_summary"`
+	FailMode       string          `json:"fail_mode"`
+	Evidence       []string        `json:"evidence,omitempty"`
+	PolicyWarnings []string        `json:"policy_warnings,omitempty"`
+	Hidden         *hidden.Report  `json:"hidden,omitempty"`
+	Pasted         *pasted.Report  `json:"pasted,omitempty"`
+	Replay         *rules.Snapshot `json:"replay,omitempty"`
 }
 
 // Sink abstracts secure storage so record construction can be tested separately.
@@ -87,6 +104,17 @@ func Write(sink Sink, record Record) error {
 	return nil
 }
 func sanitize(record Record) Record {
+	if record.Replay != nil {
+		s := *record.Replay
+		s.Fingerprint = Redact(s.Fingerprint)
+		if s.Matches != nil {
+			s.Matches = append([]string{}, s.Matches...)
+		}
+		for i := range s.Matches {
+			s.Matches[i] = Redact(s.Matches[i])
+		}
+		record.Replay = &s
+	}
 	if record.Hidden != nil {
 		h := *record.Hidden
 		h.Findings = append([]hidden.Finding(nil), h.Findings...)

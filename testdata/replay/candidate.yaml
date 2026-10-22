@@ -1,0 +1,14 @@
+version: 1
+sources:
+  read:
+    temp_paths:
+      replace: [/tmp, /var/tmp]
+    downloaded_paths:
+      replace: [/home/eval/Downloads]
+rules:
+  TW001:
+    action: ask
+  TW002:
+    action: deny
+  TW003:
+    enabled: false
