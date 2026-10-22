@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/ratuhin1122/taintwatch/internal/shellparse"
@@ -87,64 +86,80 @@ func evaluate(in Input, capture bool) (Decision, Snapshot) {
 	matched := false
 	valueReason := ""
 	rank := map[Action]int{Allow: 0, Ask: 1, Deny: 2}
-	for _, r := range defaults {
-		override, hasOverride := in.Policy.Overrides[r.ID]
-		enabled := !hasOverride || override.Enabled
-		if !capture && !enabled {
-			continue
-		}
-		if hasOverride {
-			r.Action = Action(override.Action)
-		}
-		if r.When == "tainted" && !in.Session.Tainted {
-			continue
-		}
-		e := r.Match(in)
-		if len(e) == 0 && hasOverride {
-			facts := []string{in.Tool, in.Command, in.FilePath, in.URL}
-			for _, pattern := range override.ExtraMatch {
-				for _, v := range facts {
-					if v != "" {
-						if yes, _ := regexp.MatchString(pattern, v); yes {
-							e = []string{"configured extra_match pattern"}
-							break
-						}
-					}
-				}
-				if len(e) > 0 {
-					break
-				}
-			}
-		}
-		if len(e) > 0 {
-			if capture {
-				snapshot.Matches = append(snapshot.Matches, r.ID)
-			}
-			if !enabled {
+	// Complete essential predicates before considering repository-supplied regex.
+	for pass := 0; pass < 2; pass++ {
+		budget := 16
+		for _, r := range defaults {
+			override, hasOverride := in.Policy.Overrides[r.ID]
+			enabled := !hasOverride || override.Enabled
+			if !capture && !enabled {
 				continue
 			}
-			if r.ID == "TW009" {
-				r.Reason += " (" + e[0] + ")"
-				if r.Action == Ask {
-					valueReason = r.Reason + "."
+			if hasOverride {
+				r.Action = Action(override.Action)
+			}
+			if r.When == "tainted" && !in.Session.Tainted {
+				continue
+			}
+			var e []string
+			if pass == 0 {
+				e = r.Match(in)
+			}
+			if pass == 1 && hasOverride {
+				facts := []string{in.Tool, in.Command, in.FilePath, in.URL}
+				for _, pattern := range override.Compiled {
+					if budget == 0 {
+						e = []string{"configured regex budget exhausted"}
+						r.Action = Ask
+						break
+					}
+					budget--
+					for _, v := range facts {
+						if len(v) > 256 {
+							v = v[:256]
+						}
+						if v != "" {
+							if pattern.MatchString(v) {
+								e = []string{"configured extra_match pattern"}
+								break
+							}
+						}
+					}
+					if len(e) > 0 {
+						break
+					}
 				}
-				e = []string{"exact or encoded provenance indicator matched; value omitted"}
 			}
-			if r.ID == "TW007" && e[0] == "downloaded input reaches executable code" {
-				r.Reason = "This command downloads data and executes it"
-			}
-			reason := r.Reason + " (" + strings.Join(e, ", ") + ")."
-			if in.Session.Tainted {
-				cause := "an untrusted source"
-				if len(in.Session.TaintEvents) > 0 {
-					v := in.Session.TaintEvents[len(in.Session.TaintEvents)-1]
-					cause = fmt.Sprintf("%s returned untrusted content at %s UTC", v.Tool, v.Time.UTC().Format("15:04"))
+			if len(e) > 0 {
+				if capture {
+					snapshot.Matches = append(snapshot.Matches, r.ID)
 				}
-				reason = "Session is tainted because " + cause + "; " + reason
-			}
-			if !matched || rank[r.Action] > rank[chosen.Action] {
-				chosen = Decision{r.Action, r.ID, reason, e}
-				matched = true
+				if !enabled {
+					continue
+				}
+				if r.ID == "TW009" {
+					r.Reason += " (" + e[0] + ")"
+					if r.Action == Ask {
+						valueReason = r.Reason + "."
+					}
+					e = []string{"exact or encoded provenance indicator matched; value omitted"}
+				}
+				if r.ID == "TW007" && e[0] == "downloaded input reaches executable code" {
+					r.Reason = "This command downloads data and executes it"
+				}
+				reason := r.Reason + " (" + strings.Join(e, ", ") + ")."
+				if in.Session.Tainted {
+					cause := "an untrusted source"
+					if len(in.Session.TaintEvents) > 0 {
+						v := in.Session.TaintEvents[len(in.Session.TaintEvents)-1]
+						cause = fmt.Sprintf("%s returned untrusted content at %s UTC", v.Tool, v.Time.UTC().Format("15:04"))
+					}
+					reason = "Session is tainted because " + cause + "; " + reason
+				}
+				if !matched || rank[r.Action] > rank[chosen.Action] {
+					chosen = Decision{r.Action, r.ID, reason, e}
+					matched = true
+				}
 			}
 		}
 	}
@@ -162,6 +177,26 @@ func paths(in Input, write bool) []string {
 		ps = append(ps, in.Shell.Writes...)
 	} else {
 		ps = append(ps, in.Shell.Reads...)
+	}
+	if in.Tool == "Bash" {
+		cwd := in.CWD
+		originals := append([]string{}, ps...)
+		for _, c := range in.Shell.Commands {
+			if c.Name == "cd" && len(c.Args) == 1 && !c.Dynamic {
+				if filepath.IsAbs(c.Args[0]) {
+					cwd = c.Args[0]
+				} else {
+					cwd = filepath.Join(cwd, c.Args[0])
+				}
+				// Retain both possibilities for conditional/subshell cd. This
+				// is conservative static analysis, not shell execution.
+				for _, p := range originals {
+					if !filepath.IsAbs(p) {
+						ps = append(ps, filepath.Join(cwd, p))
+					}
+				}
+			}
+		}
 	}
 	return ps
 }
@@ -279,13 +314,17 @@ func self(in Input) []string {
 				if strings.HasSuffix(l, "/.taintwatch/policy.yaml") {
 					return []string{"Taintwatch project policy"}
 				}
-				if (segment(l, "taintwatch") && (contains(path.Base(l), "policy.yaml", "policy.yml", "config.yaml", "config.yml") || segment(l, "sessions"))) || strings.Contains(path.Base(l), "taintwatch.") || strings.HasSuffix(l, "/hooks/hooks.json") || strings.HasSuffix(l, "/.claude/settings.json") || strings.HasSuffix(l, "/.claude/settings.local.json") || in.Policy.StateHome != "" && (l == strings.ToLower(filepath.ToSlash(in.Policy.StateHome)) || strings.HasPrefix(l, strings.ToLower(filepath.ToSlash(in.Policy.StateHome))+"/")) {
+				if (segment(l, "taintwatch") && (contains(path.Base(l), "policy.yaml", "policy.yml", "config.yaml", "config.yml") || segment(l, "sessions"))) || (path.Base(l) == "taintwatch" || strings.HasPrefix(path.Base(l), "taintwatch-") || strings.Contains(path.Base(l), "taintwatch.")) || strings.HasSuffix(l, "/hooks/hooks.json") || strings.HasSuffix(l, "/.claude/settings.json") || strings.HasSuffix(l, "/.claude/settings.local.json") || in.Policy.StateHome != "" && (l == strings.ToLower(filepath.ToSlash(in.Policy.StateHome)) || strings.HasPrefix(l, strings.ToLower(filepath.ToSlash(in.Policy.StateHome))+"/")) {
 					return []string{"Taintwatch configuration or state"}
 				}
 			}
 		}
 	}
 	for _, c := range in.Shell.Commands {
+		// Argument signatures survive copying or renaming the executable.
+		if len(c.Args) >= 3 && contains(c.Args[0], "allow", "disallow") && contains(c.Args[1], "domain", "path") || len(c.Args) >= 2 && c.Args[0] == "clear" && strings.HasPrefix(c.Args[1], "--reason") {
+			return []string{"mutating taintwatch argument signature"}
+		}
 		if c.Name == "sh" || c.Name == "bash" || c.Name == "dash" || c.Name == "zsh" {
 			a := nonflags(c.Args)
 			if len(a) > 0 && path.Base(a[0]) == "taintwatch-launcher" {

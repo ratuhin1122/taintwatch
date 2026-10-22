@@ -36,7 +36,16 @@ func DecodePreToolUse(r io.Reader) (PreToolUseInput, error) {
 // DecodePostToolUse reads a size-limited successful-tool event. ToolResponse is
 // required but remains opaque; its tool-specific shape is deliberately unchecked.
 func DecodePostToolUse(r io.Reader) (PostToolUseInput, error) {
-	input, err := decode[PostToolUseInput](r)
+	// Retain bounded input for top-level identity recovery, never a text search
+	// that could mistake response content for envelope fields.
+	var prefix bytes.Buffer
+	if r == nil {
+		return PostToolUseInput{}, ErrInvalidInput
+	}
+	input, err := decode[PostToolUseInput](io.TeeReader(r, &prefix))
+	if err != nil {
+		input.CommonInput = recoverCommon(prefix.Bytes())
+	}
 	if err == nil {
 		err = validateTool(input.ToolEventInput, "PostToolUse")
 	}
@@ -44,9 +53,34 @@ func DecodePostToolUse(r io.Reader) (PostToolUseInput, error) {
 		err = fmt.Errorf("%w: missing tool_response", ErrInvalidInput)
 	}
 	if err != nil {
-		return PostToolUseInput{}, fmt.Errorf("decode PostToolUse: %w", err)
+		return input, fmt.Errorf("decode PostToolUse: %w", err)
 	}
 	return input, nil
+}
+
+func recoverCommon(b []byte) (common CommonInput) {
+	d := json.NewDecoder(bytes.NewReader(b))
+	token, err := d.Token()
+	if err != nil || token != json.Delim('{') {
+		return
+	}
+	for d.More() {
+		key, err := d.Token()
+		if err != nil {
+			break
+		}
+		var value json.RawMessage
+		if d.Decode(&value) != nil {
+			break
+		}
+		switch key {
+		case "session_id":
+			_ = json.Unmarshal(value, &common.SessionID)
+		case "cwd":
+			_ = json.Unmarshal(value, &common.CWD)
+		}
+	}
+	return
 }
 
 // DecodeUserPromptSubmit reads a size-limited prompt event. An empty prompt is

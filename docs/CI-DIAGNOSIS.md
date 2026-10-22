@@ -20,3 +20,8 @@ test failure.
 
 Full baseline outputs are in ignored local scratch logs
 `.local-tmp/stabilize-step0-{checks,eval}.log`.
+
+The supplied Actions logs confirm Go 1.22.x and stable both fail at
+`Gate corpus action expectations`: benign-13 unexpectedly asks (TW009);
+attack-19 is an expected failure and must not gate. No environment failure
+is indicated by those logs.

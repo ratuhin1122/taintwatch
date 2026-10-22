@@ -3,6 +3,7 @@ package policy
 import (
 	"os"
 	"path"
+	"regexp"
 	"strings"
 )
 
@@ -47,9 +48,10 @@ type Sources struct {
 	} `yaml:"read"`
 }
 type Rule struct {
-	Action     string   `yaml:"action"`
-	Enabled    bool     `yaml:"enabled"`
-	ExtraMatch []string `yaml:"extra_match"`
+	Action     string           `yaml:"action"`
+	Enabled    bool             `yaml:"enabled"`
+	ExtraMatch []string         `yaml:"extra_match"`
+	Compiled   []*regexp.Regexp `yaml:"-" json:"-"`
 }
 
 var RuleIDs = []string{"TW001", "TW002", "TW003", "TW004", "TW005", "TW006", "TW007", "TW008", "TW009"}

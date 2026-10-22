@@ -119,8 +119,11 @@ func TestDeadlineModes(t *testing.T) {
 				if code != 0 || time.Since(start) > time.Second || !strings.Contains(errOut.String(), "deadline") {
 					t.Fatal(code, out.String(), errOut.String())
 				}
-				if mode == "open" && out.String() != "{}\n" {
+				if mode == "open" && post && out.String() != "{}\n" {
 					t.Fatal(out.String())
+				}
+				if !post && !strings.Contains(out.String(), `"permissionDecision":"ask"`) {
+					t.Fatal("pre deadline must ask", out.String())
 				}
 				if mode == "closed" && !strings.Contains(out.String(), map[bool]string{true: "additionalContext", false: "permissionDecision"}[post]) {
 					t.Fatal(out.String())

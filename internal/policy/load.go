@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -353,6 +354,13 @@ func (e *Effective) setList(k string, v []string) {
 		id := strings.Split(k, ".")[1]
 		r := e.Config.Rules[id]
 		r.ExtraMatch = v
+		r.Compiled = nil
+		for _, pattern := range v {
+			re, err := regexp.Compile(pattern)
+			if err == nil {
+				r.Compiled = append(r.Compiled, re)
+			}
+		}
 		e.Config.Rules[id] = r
 	}
 }

@@ -21,10 +21,10 @@ func TestEvalRunCLI(t *testing.T) {
 		}
 		if format == "--json" {
 			var r corpus.Report
-			if e := json.Unmarshal(out.Bytes(), &r); e != nil || r.GateFailures != 1 || r.ExpectedFailures != 1 || r.Attacks.Caught != 17 {
+			if e := json.Unmarshal(out.Bytes(), &r); e != nil || r.GateFailures != 1 || r.ExpectedFailures != 1 || r.Attacks.Caught != 32 {
 				t.Fatal(e, r.GateFailures, r.ExpectedFailures)
 			}
-		} else if !strings.Contains(out.String(), "17/17") {
+		} else if !strings.Contains(out.String(), "32/32") {
 			t.Fatal(out.String())
 		}
 	}

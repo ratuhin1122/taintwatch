@@ -3,11 +3,14 @@ package hooks
 import (
 	"context"
 	"io"
+	"os"
+	"path/filepath"
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
 	"github.com/ratuhin1122/taintwatch/internal/hookio"
 	"github.com/ratuhin1122/taintwatch/internal/rules"
 	"github.com/ratuhin1122/taintwatch/internal/shellparse"
+	"github.com/ratuhin1122/taintwatch/internal/state"
 )
 
 // Pre processes a requested action using current session state and the rule table.
@@ -35,7 +38,7 @@ func Pre(ctx context.Context, reader io.Reader, override string, observe func(st
 	}
 	warning := policyWarning(loaded, policyErr)
 	if ctx.Err() != nil {
-		return preFailure(mode, "deadline")
+		return preFailure("closed", "deadline")
 	}
 	// Always rules do not depend on reading session state. Preserve self-protection
 	// and decode/run decisions even when state initialization or loading fails open.
@@ -43,6 +46,12 @@ func Pre(ctx context.Context, reader io.Reader, override string, observe func(st
 	p := rules.FromPolicy(loaded.Config)
 	p.StateHome, _ = rt.StateHome()
 	p.SelfPaths = append([]string{}, loaded.Files...)
+	if executable, err := os.Executable(); err == nil {
+		p.SelfPaths = append(p.SelfPaths, executable)
+	}
+	if root := os.Getenv("CLAUDE_PLUGIN_ROOT"); root != "" {
+		p.SelfPaths = append(p.SelfPaths, filepath.Join(root, "bin", "taintwatch-launcher"))
+	}
 	input := rules.Input{Policy: p, Tool: in.ToolName, CWD: in.CWD, Command: args.Command, FilePath: args.FilePath, URL: args.URL}
 	if in.ToolName == "Bash" && argsErr == nil {
 		input.Shell = shellparse.Parse(args.Command)
@@ -85,27 +94,43 @@ func Pre(ctx context.Context, reader io.Reader, override string, observe func(st
 	if err != nil {
 		return failure("state loading")
 	}
+	global, err := store.Load(state.ObservationLossSession)
+	if err != nil {
+		return failure("observation state loading")
+	}
+	if global.Degraded {
+		session.Degraded = true
+		session.DegradedReason = global.DegradedReason
+	}
 	record.StateKnown = true
 	record.Tainted = session.Tainted
+	record.Degraded = session.Degraded
+	record.DegradedReason = session.DegradedReason
 	for _, e := range session.TaintEvents {
 		record.TaintSources = append(record.TaintSources, string(e.Source))
 	}
 	p.StateHome = store.Home()
-	p.SelfPaths = append(append([]string{}, loaded.Files...), store.AuditFile())
+	p.SelfPaths = append(p.SelfPaths, store.AuditFile())
 	input.Policy = p
 	input.Session = session
+	if session.Degraded {
+		input.Session.Tainted = true
+	}
 	if in.ToolName == "Bash" {
 		if input.Shell.Unparseable && !session.Tainted {
 			return failure("shell parsing")
 		}
 	}
 	if ctx.Err() != nil {
-		return preFailure(mode, "deadline")
+		return preFailure("closed", "deadline")
 	}
 	d, snapshot := rules.EvaluateTraced(input)
+	if session.Degraded && d.Action != rules.Allow {
+		d.Reason = "Session observation is degraded (" + session.DegradedReason + "); " + d.Reason
+	}
 	snapshot.Fingerprint = rules.MatchFingerprint(loaded.Config)
 	if ctx.Err() != nil {
-		return preFailure(mode, "deadline")
+		return preFailureKnown("closed", "deadline", d)
 	}
 	record.Decision = string(d.Action)
 	record.Rule = d.RuleID
@@ -113,7 +138,7 @@ func Pre(ctx context.Context, reader io.Reader, override string, observe func(st
 	record.Evidence = d.Evidence
 	// Successful decisions retain only complete redacted match facts. Error and
 	// incomplete-policy records cannot be promoted into replayable observations.
-	if policyErr == nil {
+	if policyErr == nil && !session.Degraded {
 		record.Replay = &snapshot
 	}
 	if err := audit.Write(store, record); err != nil {

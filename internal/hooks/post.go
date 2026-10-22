@@ -15,25 +15,53 @@ import (
 )
 
 // Post records a completed tool's provenance and informational content findings.
-func Post(ctx context.Context, stdin io.Reader, override, profile string, observe func(string), classifier *taint.Classifier, rt Runtime) Outcome {
+func Post(ctx context.Context, stdin io.Reader, override, profile string, observe func(string), classifier *taint.Classifier, rt Runtime) (out Outcome) {
 	rt = rt.defaults()
+	completed := false
+	id := ""
+	failureMode := "open"
+	if override != "" {
+		failureMode = override
+	}
+	defer func() {
+		if recover() != nil {
+			out = postFailure(failureMode, "internal panic")
+		}
+		if !completed {
+			store, err := state.New(state.Options{})
+			if err == nil {
+				reason := "post observation lost: " + out.Failure
+				_, err = store.MarkDegraded(id, reason)
+				if err == nil {
+					_ = audit.Write(store, audit.Record{Session: id, Hook: "PostToolUse", Rule: "post.degraded", Decision: "allow", Reason: reason, Degraded: true, DegradedReason: reason})
+				}
+			}
+			if err != nil {
+				out.Failure += "; degraded state persistence failed"
+			}
+		}
+	}()
 	if override != "" && observe != nil {
 		observe(override)
 	}
 	boot, _ := rt.Bootstrap()
 	mode := boot.Config.FailMode
+	failureMode = mode
 	if override != "" {
 		mode = override
 	}
+	failureMode = mode
 	if observe != nil {
 		observe(mode)
 	}
 	input, err := hookio.DecodePostToolUse(stdin)
+	id = input.SessionID
 	if err != nil {
 		return postFailure(mode, "input decoding")
 	}
 	loaded, policyErr := rt.LoadPolicy(input.CWD, override, profile)
 	mode = loaded.Config.FailMode
+	failureMode = mode
 	if observe != nil {
 		observe(mode)
 	}
@@ -129,6 +157,7 @@ func Post(ctx context.Context, stdin io.Reader, override, profile string, observ
 		}
 		return o
 	}
+	completed = true
 	if m.Tainted {
 		return Outcome{Result: hookio.AdditionalContext(m.Context()), Failure: warning}
 	}

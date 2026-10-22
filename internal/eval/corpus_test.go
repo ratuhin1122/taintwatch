@@ -23,7 +23,7 @@ func TestReviewBatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Files != 50 || s.Attacks != 20 || s.Benign != 30 || s.KnownMisses != 1 || s.Expectations < 50 || s.Steps < 100 {
+	if s.Files != 63 || s.Attacks != 33 || s.Benign != 30 || s.KnownMisses != 1 || s.Expectations < 50 || s.Steps < 100 {
 		t.Fatalf("unexpected review batch %+v", s)
 	}
 	for _, kind := range []string{"attacks", "benign"} {

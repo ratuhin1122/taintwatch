@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/ratuhin1122/taintwatch/internal/state"
 	"io"
 	"strings"
 	"sync/atomic"
@@ -71,7 +72,13 @@ func guardedHook(args []string, in io.Reader, out, errOut io.Writer, timeout tim
 	}
 	failure := func(stage string) postOutcome {
 		if post {
+			if store, err := state.New(state.Options{}); err == nil {
+				_, _ = store.MarkDegraded("", "post observation lost: "+stage)
+			}
 			return postFailure(mode(), stage)
+		}
+		if stage == "deadline" {
+			return preFailure("closed", stage)
 		}
 		return preFailure(mode(), stage)
 	}

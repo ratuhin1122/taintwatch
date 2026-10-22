@@ -53,6 +53,9 @@ func Render(w io.Writer, h audit.History, asJSON bool) error {
 		}
 		fmt.Fprintf(&b, "\n%s UTC — %s: %s [%s]\n", r.TS.UTC().Format("2006-01-02 15:04:05"), label, text(r.Tool), text(r.Rule))
 		fmt.Fprintf(&b, "Why: %s\n", text(r.Reason))
+		if r.Degraded {
+			fmt.Fprintf(&b, "Degraded: yes (%s)\n", text(r.DegradedReason))
+		}
 		if r.Hidden != nil {
 			for _, f := range r.Hidden.Findings {
 				fmt.Fprintf(&b, "Content hint (informational): %s; count=%d; excerpt=%s\n", text(hidden.Visible(f.Type)), f.Count, text(hidden.Visible(f.Excerpt)))
@@ -115,6 +118,9 @@ func StatusWithPolicy(w io.Writer, s state.Session, known bool, h audit.History,
 			id = state.SanitizeSessionID(s.ID)
 		}
 		fmt.Fprintf(&b, "Session: %s\n", text(id))
+		if s.Degraded {
+			fmt.Fprintf(&b, "Degraded: yes (%s)\n", text(s.DegradedReason))
+		}
 		if !known {
 			fmt.Fprintln(&b, "Tainted: unknown (no persisted session state).")
 		} else if s.Tainted {

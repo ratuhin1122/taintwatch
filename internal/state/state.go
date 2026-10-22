@@ -71,13 +71,15 @@ type ClearRecord struct {
 
 // Session is coarse session-level state. It does not track fine-grained flows.
 type Session struct {
-	ID          string       `json:"id"`
-	Tainted     bool         `json:"tainted"`
-	TaintEvents []TaintEvent `json:"taint_events,omitempty"`
-	Approvals   []Approval   `json:"approvals,omitempty"`
-	LastClear   *ClearRecord `json:"last_clear,omitempty"`
-	CreatedAt   time.Time    `json:"created_at"`
-	UpdatedAt   time.Time    `json:"updated_at"`
+	Degraded       bool         `json:"degraded,omitempty"`
+	DegradedReason string       `json:"degraded_reason,omitempty"`
+	ID             string       `json:"id"`
+	Tainted        bool         `json:"tainted"`
+	TaintEvents    []TaintEvent `json:"taint_events,omitempty"`
+	Approvals      []Approval   `json:"approvals,omitempty"`
+	LastClear      *ClearRecord `json:"last_clear,omitempty"`
+	CreatedAt      time.Time    `json:"created_at"`
+	UpdatedAt      time.Time    `json:"updated_at"`
 }
 
 // Options configures a store. Zero retention/lock timeout selects the defaults;
@@ -342,6 +344,8 @@ func (s *Store) Clear(id, reason, who string) (Session, error) {
 			return err
 		}
 		session.Tainted = false
+		session.Degraded = false
+		session.DegradedReason = ""
 		session.TaintEvents = nil
 		session.Approvals = nil
 		session.LastClear = &ClearRecord{Time: now, Reason: reason, Who: who}
@@ -352,6 +356,24 @@ func (s *Store) Clear(id, reason, who string) (Session, error) {
 // Touch persists a clean session if necessary and refreshes its update time/mtime.
 func (s *Store) Touch(id string) (Session, error) {
 	return s.update(id, func(*Session, time.Time) error { return nil })
+}
+
+// ObservationLossSession conservatively covers failures without a recoverable id.
+const ObservationLossSession = "__taintwatch_observation_loss__"
+
+// MarkDegraded records lost observation independently of source classification.
+func (s *Store) MarkDegraded(id, reason string) (Session, error) {
+	if id == "" {
+		id = ObservationLossSession
+	}
+	return s.update(id, func(session *Session, _ time.Time) error {
+		if err := checkReason(reason); err != nil {
+			return err
+		}
+		session.Degraded = true
+		session.DegradedReason = reason
+		return nil
+	})
 }
 
 func checkReason(reason string) error {

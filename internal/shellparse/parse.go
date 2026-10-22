@@ -68,8 +68,17 @@ func parse(source string, depth int) (r Result) {
 			dynamic := false
 			for i, w := range v.Args {
 				s, ok := literal(w)
+				ok = ok && !unresolvedGlob(w)
 				words[i] = s
 				dynamic = dynamic || !ok
+			}
+			dynamic = dynamic || uncertainWrapper(words)
+			// Preserve uncertainty instead of treating unsupported wrapper options
+			// as a literal executable name.
+			for _, a := range words {
+				if a == "-S" || a == "--split-string" || strings.HasPrefix(a, "--split-string=") {
+					dynamic = true
+				}
 			}
 			words = Unwrap(words)
 			if len(words) == 0 {
@@ -159,6 +168,27 @@ func parse(source string, depth int) (r Result) {
 	return r
 }
 
+// Only unquoted/unescaped metacharacters are expansions. Quoted and
+// escaped glob examples in documentation stay literal.
+func unresolvedGlob(w *syntax.Word) bool {
+	for _, part := range w.Parts {
+		if v, ok := part.(*syntax.Lit); ok {
+			for i := 0; i < len(v.Value); i++ {
+				if v.Value[i] == '\\' {
+					i++
+					continue
+				}
+				if strings.ContainsRune("*?[{", rune(v.Value[i])) {
+					return true
+				}
+			}
+		}
+		if _, ok := part.(*syntax.BraceExp); ok {
+			return true
+		}
+	}
+	return false
+}
 func containsName(s string, names ...string) bool {
 	for _, n := range names {
 		if n == s {
@@ -352,6 +382,48 @@ func Unwrap(w []string) []string {
 	return w
 }
 
+func uncertainWrapper(w []string) bool {
+	for len(w) > 0 {
+		name := path.Base(w[0])
+		if !containsName(name, "sudo", "env", "command", "builtin", "nohup", "timeout", "xargs", "nice") {
+			return false
+		}
+		i := 1
+		for i < len(w) {
+			a := w[i]
+			if a == "--" {
+				i++
+				break
+			}
+			if strings.HasPrefix(a, "-") {
+				value := name == "sudo" && containsName(a, "-u", "-g", "--user", "--group") || name == "env" && containsName(a, "-u", "--unset") || name == "timeout" && containsName(a, "-k", "-s", "--kill-after", "--signal") || name == "xargs" && containsName(a, "-n", "-P", "-I", "-s", "--max-args", "--max-procs", "--replace") || name == "nice" && containsName(a, "-n", "--adjustment")
+				flag := name == "sudo" && containsName(a, "-n", "-E", "-H") || name == "env" && containsName(a, "-i", "--ignore-environment") || name == "command" && containsName(a, "-p", "-v", "-V") || name == "xargs" && containsName(a, "-0", "-r", "-t")
+				if !value && !flag {
+					return true
+				}
+				i++
+				if value {
+					i++
+				}
+				continue
+			}
+			if name == "env" && strings.Contains(a, "=") {
+				i++
+				continue
+			}
+			if name == "timeout" {
+				i++
+			}
+			break
+		}
+		if i > len(w) {
+			return true
+		}
+		w = w[i:]
+	}
+	return true
+}
+
 // Host extracts URL, scp-style, and SSH target hosts without suffix trust matching.
 func Host(s string) string {
 	if u, e := url.Parse(s); e == nil && u.Scheme != "" && u.Host != "" {
@@ -400,8 +472,16 @@ func (r *Result) extract(c Command) {
 	}
 	var hosts []string
 	for _, a := range c.Args {
-		if (c.Name == "curl" || c.Name == "wget") && strings.HasPrefix(a, "@") {
-			r.Reads = append(r.Reads, strings.TrimPrefix(a, "@"))
+		if c.Name == "curl" || c.Name == "wget" {
+			if strings.HasPrefix(a, "@") {
+				r.Reads = append(r.Reads, a[1:])
+			}
+			if i := strings.Index(a, "=@"); i >= 0 {
+				r.Reads = append(r.Reads, a[i+2:])
+			}
+			if strings.HasPrefix(a, "-d@") {
+				r.Reads = append(r.Reads, a[3:])
+			}
 		}
 		candidate := a
 		if _, v, ok := strings.Cut(a, "="); ok && strings.Contains(v, "://") {
@@ -423,6 +503,21 @@ func (r *Result) extract(c Command) {
 	if network {
 		r.Networks = append(r.Networks, Network{Command: c.Name, Hosts: hosts, LowConfidence: low})
 		r.Hosts = append(r.Hosts, hosts...)
+	}
+	if c.Name == "sed" || c.Name == "perl" || c.Name == "awk" {
+		inplace := false
+		for i, a := range c.Args {
+			if strings.HasPrefix(a, "-i") && (c.Name != "awk" || i+1 < len(c.Args) && c.Args[i+1] == "inplace") || strings.HasPrefix(a, "--in-place") {
+				inplace = true
+			}
+		}
+		if inplace {
+			for _, a := range c.Args {
+				if !strings.HasPrefix(a, "-") {
+					r.Writes = append(r.Writes, a)
+				}
+			}
+		}
 	}
 	// Literal operands are candidates, not a claim about actual filesystem access.
 	switch c.Name {

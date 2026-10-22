@@ -45,10 +45,10 @@ func TestBinaryHookDeadline(t *testing.T) {
 				if e != nil || time.Since(start) > 2500*time.Millisecond || !strings.Contains(errOut.String(), "deadline") {
 					t.Fatalf("%v elapsed=%s out=%s err=%s", e, time.Since(start), out.String(), errOut.String())
 				}
-				if mode == "open" && out.String() != "{}\n" {
+				if mode == "open" && kind == "post" && out.String() != "{}\n" {
 					t.Fatal(out.String())
 				}
-				if mode == "closed" && !strings.Contains(out.String(), map[string]string{"pre": "permissionDecision", "post": "additionalContext"}[kind]) {
+				if (mode == "closed" || kind == "pre") && !strings.Contains(out.String(), map[string]string{"pre": "permissionDecision", "post": "additionalContext"}[kind]) {
 					t.Fatal(out.String())
 				}
 			})

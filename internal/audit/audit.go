@@ -33,6 +33,8 @@ func DecodeRecord(data []byte) (Record, error) {
 // the completed call is not blocked; it is not a PreToolUse permission approval.
 // StateKnown disambiguates a clean snapshot from an unavailable state on errors.
 type Record struct {
+	Degraded       bool            `json:"degraded,omitempty"`
+	DegradedReason string          `json:"degraded_reason,omitempty"`
 	TS             time.Time       `json:"ts"`
 	Session        string          `json:"session"`
 	Hook           string          `json:"hook"`
@@ -145,6 +147,7 @@ func sanitize(record Record) Record {
 	record.Decision = Redact(record.Decision)
 	record.Rule = Redact(record.Rule)
 	record.Reason = Redact(record.Reason)
+	record.DegradedReason = Redact(record.DegradedReason)
 	record.Who = Redact(record.Who)
 	// Do not accept accidental raw-input summaries from callers at this stage.
 	record.InputSummary = "tool arguments and response omitted"
