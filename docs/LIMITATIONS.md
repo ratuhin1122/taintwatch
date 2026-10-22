@@ -1,51 +1,71 @@
 # Limitations
 
-- Pre-tool enforcement implements layered policy, action overrides and
-  self-protection. Explicit clear is implemented; native approvals are not cached
-  because no authenticated per-ask signal is documented. See [approvals.md](approvals.md).
-- Real Claude Code payloads and exact product transport structs remain unconfirmed.
-- Session-level taint tracking is coarse; content classifiers are telemetry only.
-  Hidden-content hints scan at most 1 MiB of untrusted response string values and
-  never change decisions. They use presentation heuristics, not rendered layout
-  or full Unicode/Markdown analysis. See [HIDDEN-CONTENT.md](HIDDEN-CONTENT.md).
-- A single prompt blob cannot reliably separate the user's instruction from
-  pasted content. UserPromptSubmit scans only the first 1 MiB with the hidden-text
-  detector and a simple fenced-block/long-log heuristic. These are informational
-  hints, not proof of provenance or prompt injection; optional pasted-content
-  markers are not authenticated. Prompt telemetry never changes taint, approvals,
-  policy, permission decisions, or model context. It emits no stdout and exits 0
-  even for closed-mode errors, panic recovery, or a deadline. Prompt contents
-  and log lines are omitted from audit; only counters and safe hidden-text hints
-  are stored. See [PROMPT-TELEMETRY.md](PROMPT-TELEMETRY.md).
-- Product platforms: macOS/Linux amd64/arm64. Windows is best-effort through WSL.
-- Hook performance is not yet measured; the eventual typical target is under 50 ms.
-- State writes serialize through a bounded store lock and scan for expiry. State
-  must live on a local Unix filesystem; native Windows storage is unsupported.
-- Shell analysis is best-effort. Bash syntax is parsed, but variables, aliases,
-  functions, executable contents, sourced scripts, interpreter programs, wrapper
-  option dialects and runtime filesystem behavior are not fully resolved. Tainted
-  unresolved expansions ask; this is not a shell sandbox. Literal shell scripts
-  are inspected to a bounded depth. Heredoc bodies are retained, not generally
-  interpreted as executable programs. TW007 follows connected AST flows rather
-  than associating unrelated pipeline groups. Its tracked shell-variable map is
-  capped at 128 names, expanded literals at 64 KiB, traversal at depth 32 / 20,000
-  visits, and foreign-expression scanning at 16,000 tokens. Unsupported/exhausted
-  analyses report `Incomplete`; absence of a TW007 match is not proof of safety.
-- TW007's Python/Node inline-code scanner is not a full language parser. Dynamic
-  imports/aliases, reflection, template-string expressions, function definitions
-  and invocation, arbitrary filters/commands, cross-command file write/execute
-  sequences, descriptor aliases and control-flow joins are not fully modeled.
-  False-positive rates on a real benign corpus will be measured in M3; unit
-  near-misses are not a substitute for that measurement.
-- File access extractors cannot enumerate every program's reads and writes.
-  Symlink targets can change after checking. Git remotes, tracked status, SSH
-  aliases, HTTP redirects and DNS are not looked up. Unknown network destinations
-  ask; package manifests and truncate targets receive conservative treatment.
-- Closed mode in PostToolUse is advisory only; a completed call cannot be undone.
-- Audit rotation discards older history; ask counts cover retained logs only.
-  Redaction is best-effort; tool contents are omitted. See [AUDIT.md](AUDIT.md).
-- Audit replay freezes historical taint and complete rule-match snapshots. It can
-  compare rule actions/enabled flags, but cannot reconstruct omitted inputs,
-  replay older summary-only records, evaluate changed matching/source criteria,
-  or simulate downstream workflow changes. Uncertain records are explicitly
-  unreplayable, not unchanged. See [REPLAY.md](REPLAY.md).
+Taintwatch adds policy checks around observable Claude Code tool actions. It does
+not establish that a session, command, document or destination is safe.
+
+- **Synthetic evaluation.** The corpus is synthetic and written by the
+  maintainers. Results show behavior on known patterns, not real-world coverage,
+  attack prevalence, or a general false-positive rate. It is not an independent
+  or held-out benchmark. Measured tables, date, build version, corpus hashes and
+  the reproduction command are in [EVAL.md](EVAL.md#measured-results). No
+  comparative results against other projects have been measured here.
+- **Coarse session taint.** Untrusted content taints the session rather than
+  tracking which instruction or value caused each later action. Unrelated work
+  can therefore ask for confirmation. Individually harmless actions can combine
+  into harmful behavior that the rules do not infer. Clear is an explicit user
+  action; a reassuring tool response does not automatically clear taint.
+  Retention may remove old session state, so history is not permanent.
+- **Shell analysis is best-effort.** Parsing Bash syntax does not resolve all
+  variables, aliases, functions, sourced files, executable contents, interpreter
+  programs, wrapper options or runtime filesystem behavior. Heredoc bodies are
+  not generally interpreted as executable programs. File access extractors cannot
+  enumerate every program's reads and writes. Tainted unresolved expansions ask,
+  but an absence of findings is not proof of safety. This is not a shell sandbox.
+  Decode-and-run analysis has bounded traversal and literal expansion; its
+  Python/Node scanner is not a full language parser. Dynamic imports, reflection,
+  cross-command write/execute flows and control-flow joins can evade analysis.
+- **Value provenance gaps.** The current implementation does not propagate exact
+  tainted values into later action checks. Transformed, encoded or paraphrased
+  values can evade value matching; future exact-value matching alone will not
+  recover semantic equivalence or infer an application's eventual behavior.
+- **Allowlisted destinations can exfiltrate.** Host trust does not establish
+  repository ownership, account identity, URL-path trust or upload intent.
+  Attacker-controlled resources on an allowed host can evade egress checks unless
+  another rule catches the action. Git remotes, SSH aliases, HTTP redirects and
+  DNS are not resolved. Symlink targets can change after a path check.
+- **Confirmation depends on the user.** A user who approves everything can
+  authorize the harmful actions that an ask is intended to interrupt. An ask is
+  not containment. Native approvals are not cached because no authenticated
+  per-ask approval signal has been verified; see [approvals.md](approvals.md).
+  Policy exceptions and explicit clear can also weaken future protection.
+- **Hook visibility and compatibility.** Hooks see only the tool events Claude
+  Code routes through the configured hooks. Actions outside that route, disabled
+  or miswired hooks, and tools whose behavior the rules do not understand are
+  coverage gaps. Changes to Claude Code event delivery, payloads, tool names,
+  decision handling or exit-code semantics can break these assumptions. Official
+  formats are recorded in [ASSUMPTIONS.md](ASSUMPTIONS.md); real sanitized
+  Read/WebFetch/Bash/MCP captures remain pending. Synthetic documented-envelope
+  tests do not verify live hook delivery or future compatibility.
+- **Errors and completed calls.** Open fail mode can let an action continue when
+  enforcement fails; closed mode asks for confirmation and still depends on the
+  user. PostToolUse runs after completion and cannot undo the tool call. A
+  deadline or successful hook exit is not evidence that every check completed.
+- **Content heuristics are telemetry.** Hidden-text detection uses bounded
+  presentation heuristics, not rendered layout or complete Unicode/Markdown
+  analysis. It never changes a decision by itself. A single prompt blob cannot
+  reliably separate the user's instruction from pasted content; prompt telemetry
+  never blocks, rewrites the prompt, changes taint or grants approval. See
+  [HIDDEN-CONTENT.md](HIDDEN-CONTENT.md) and
+  [PROMPT-TELEMETRY.md](PROMPT-TELEMETRY.md).
+- **Storage and privacy.** Product storage targets local Unix filesystems on
+  Linux/macOS; native Windows storage is unsupported, so use WSL. Advisory locks
+  and atomic replacement are not a universal crash-durability guarantee. Audit
+  rotation and retention discard history; counts describe retained records.
+  Secret redaction is best-effort and logs are not authenticated or tamper-proof.
+  Tool bodies are omitted. No hook performance benchmark has been published.
+  See [AUDIT.md](AUDIT.md).
+- **Audit replay cannot recover omitted facts.** Replay freezes historical taint
+  and complete rule-match snapshots to compare rule actions/enabled flags. Legacy
+  records and changed matching/source criteria are unreplayable; it does not
+  reconstruct inputs or simulate downstream workflow changes. Missing information
+  is reported as unreplayable, never unchanged. See [REPLAY.md](REPLAY.md).
