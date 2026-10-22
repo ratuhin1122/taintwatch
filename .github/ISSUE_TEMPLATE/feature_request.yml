@@ -1,0 +1,34 @@
+name: "Feature request"
+description: "Propose a focused improvement with a use case."
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include secrets, private tool contents or undisclosed vulnerabilities. Read SECURITY.md before reporting security issues. Redaction is best-effort; review all snippets manually."
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary and expected behavior
+      description: Explain the use case and what should happen.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Taintwatch version/commit, Claude Code version, OS/architecture, plugin or standalone, relevant redacted policy.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal sanitized event sequence
+      description: Include preceding taint source and requested action; use fake paths, domains and credentials.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy review
+      options:
+        - label: I manually reviewed this report and removed private information and real credentials.
+          required: true

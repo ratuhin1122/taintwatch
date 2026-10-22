@@ -240,3 +240,10 @@ M2.3 hook commands also set the launcher-owned `TAINTWATCH_NO_BOOTSTRAP=1` envir
 variable so first-run networking cannot delay hook entry; checksum bootstrap is
 an explicit command before a session. This is an implementation setting, not a
 Claude Code schema field.
+
+## M4.3 documentation verification — 2026-10-22
+
+- Marketplace command syntax: **verified (https://code.claude.com/docs/en/plugin-marketplaces)**. The documented shell forms are `claude plugin marketplace add <owner>/<repo>` and `claude plugin install <plugin>@<marketplace>`; corresponding in-session `/plugin` forms are documented on the same page. The interactive install opens a plugin panel.
+- Plugin command namespace: **verified (https://code.claude.com/docs/en/plugins)**. This repository's command is `/taintwatch:doctor`; execution in a live authenticated session remains **unverified**.
+- Local CLI test: Claude Code 2.1.175 accepted manifest validation and local marketplace registration; a staged local plugin installed enabled. The local directory must be `./`, not bare `.` with this CLI. These checks do not establish a minimum compatible version or live hook delivery.
+- Public repository exists; latest-release endpoint returned 404 on 2026-10-22. This is publication status, not a hook compatibility guarantee. See [README command verification](README-VERIFICATION.md).

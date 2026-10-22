@@ -114,3 +114,15 @@ temporary project, fake `.env`, binary and state are removed on exit. Bash, Go
 For WSL without a Go SDK, an absolute `TAINTWATCH_DEMO_BINARY` may point to a
 fresh cross-compiled Linux executable. The subprocess test similarly accepts
 `TAINTWATCH_E2E_BINARY` for that verification setup; normal CI compiles afresh.
+
+## Distribution and trust boundaries
+
+The repository is both a single-plugin marketplace (`ratuhin1122-plugins`) and a standalone Go CLI. Plugin hooks call the POSIX launcher with bootstrap disabled. It locates a bundled/platform binary, a PATH binary, or a verified cached asset; only an explicit non-hook first-run invocation can attempt a release download. Checksums from the same release provide integrity against corruption, not an independent release signature. There is currently no published release. Standalone installation backs up user settings and tracks exactly the hook entries it owns; enabling both forms duplicates hooks.
+
+Runtime hook analysis makes no network/model calls and sends no telemetry. Explicit installation/bootstrap and dependency downloads are a separate network boundary. JSON stdin, tool responses, repository policy and audit logs are untrusted inputs. Project policy may tighten restrictions but cannot loosen user protections without user-layer authorization. Output decisions go through hookio; hidden/encoded/prompt heuristics only write local informational metadata. TW009 value provenance is an action rule and can ask independently of detector findings.
+
+Audit redaction occurs before serialization and full response bodies are omitted. Session state retains bounded original indicators/variants, which may be sensitive; private file permissions do not make them redacted. State mutations and rotation use Unix advisory locks. Native Windows locking is unsupported; WSL deployments should keep state on the Linux filesystem.
+
+Eval routes ordered synthetic events through the hook decision path using isolated state. Replay operates only on redacted recorded snapshots and supported compatible overrides; it cannot recreate raw inputs or arbitrary source/matcher changes. Doctor validates local configuration and an in-memory synthetic scenario, not live Claude delivery. CLI validation and synthetic replay do not replace the outstanding real hook payload checks in ASSUMPTIONS.md.
+
+For deployment boundaries, fail behavior, coarse taint and analysis gaps, see [LIMITATIONS.md](LIMITATIONS.md). For the current measured gate failure, see [EVAL.md](EVAL.md).
