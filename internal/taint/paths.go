@@ -1,10 +1,10 @@
 package taint
 
 import (
-	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/ratuhin1122/taintwatch/internal/policy"
 	"github.com/ratuhin1122/taintwatch/internal/state"
 )
 
@@ -63,23 +63,5 @@ func slash(s string) string { return strings.ReplaceAll(filepath.ToSlash(s), `\`
 // globMatch implements segment globbing with ** for zero or more complete path
 // segments. Its iterative DP avoids recursion on adversarially deep paths.
 func globMatch(pattern, value string) bool {
-	segments := strings.Split(value, "/")
-	dp := make([]bool, len(segments)+1)
-	dp[0] = true
-	for _, part := range strings.Split(pattern, "/") {
-		next := make([]bool, len(dp))
-		if part == "**" {
-			next[0] = dp[0]
-			for j := 1; j < len(next); j++ {
-				next[j] = dp[j] || next[j-1]
-			}
-		} else {
-			for j := 1; j < len(next); j++ {
-				ok, _ := path.Match(part, segments[j-1])
-				next[j] = dp[j-1] && ok
-			}
-		}
-		dp = next
-	}
-	return dp[len(segments)]
+	return policy.MatchPath(pattern, value)
 }

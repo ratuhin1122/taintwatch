@@ -4,10 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"sync/atomic"
 	"time"
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
 	"github.com/ratuhin1122/taintwatch/internal/hookio"
+	"github.com/ratuhin1122/taintwatch/internal/policy"
 	"github.com/ratuhin1122/taintwatch/internal/state"
 	"github.com/ratuhin1122/taintwatch/internal/taint"
 )
@@ -28,31 +30,36 @@ func runPost(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 func runPostWithin(args []string, stdin io.Reader, stdout, stderr io.Writer, timeout time.Duration) int {
 	flags := flag.NewFlagSet("hook post", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
-	profile := flags.String("profile", "balanced", "source profile")
-	failMode := flags.String("fail-mode", "open", "internal error behavior")
+	profile := flags.String("profile", "", "source profile; default from policy")
+	failMode := flags.String("fail-mode", "", "internal error behavior; default from policy")
 	if err := flags.Parse(args); err == flag.ErrHelp {
 		fmt.Fprintln(stdout, "Usage: taintwatch hook post [--profile balanced|paranoid] [--fail-mode open|closed]")
 		return exitOK
 	} else if err != nil || flags.NArg() != 0 {
-		return finishPost(postFailure(*failMode, "configuration"), stdout, stderr)
+		return finishPost(postFailure(userErrorMode(*failMode), "configuration"), stdout, stderr)
 	}
-	if *failMode != "open" && *failMode != "closed" {
-		return finishPost(postFailure("open", "configuration"), stdout, stderr)
+	if *failMode != "" && *failMode != "open" && *failMode != "closed" {
+		return finishPost(postFailure(userErrorMode(""), "configuration"), stdout, stderr)
 	}
-	p := taint.DefaultPolicy()
-	p.Profile = *profile
-	classifier, err := taint.New(p)
-	if err != nil {
-		return finishPost(postFailure(*failMode, "configuration"), stdout, stderr)
+	if *profile != "" && *profile != "balanced" && *profile != "paranoid" {
+		return finishPost(postFailure(userErrorMode(*failMode), "configuration"), stdout, stderr)
 	}
 	completed := make(chan postOutcome, 1)
+	var closed atomic.Bool
+	closed.Store(*failMode == "closed")
+	errorMode := func() string {
+		if closed.Load() {
+			return "closed"
+		}
+		return "open"
+	}
 	go func() {
 		defer func() {
 			if recover() != nil {
-				completed <- postFailure(*failMode, "internal panic")
+				completed <- postFailure(errorMode(), "internal panic")
 			}
 		}()
-		completed <- processPost(stdin, classifier, *failMode)
+		completed <- processPostConfigured(stdin, *failMode, *profile, func(mode string) { closed.Store(mode == "closed") }, nil)
 	}()
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
@@ -60,7 +67,7 @@ func runPostWithin(args []string, stdin io.Reader, stdout, stderr io.Writer, tim
 	case outcome := <-completed:
 		return finishPost(outcome, stdout, stderr)
 	case <-timer.C:
-		return finishPost(postFailure(*failMode, "deadline"), stdout, stderr)
+		return finishPost(postFailure(errorMode(), "deadline"), stdout, stderr)
 	}
 }
 
@@ -83,15 +90,35 @@ func finishPost(outcome postOutcome, stdout, stderr io.Writer) int {
 }
 
 func processPost(stdin io.Reader, classifier *taint.Classifier, mode string) postOutcome {
+	return processPostConfigured(stdin, mode, "", nil, classifier)
+}
+func processPostConfigured(stdin io.Reader, override, profile string, observe func(string), classifier *taint.Classifier) postOutcome {
+	boot, _ := policy.Load(policy.Options{NoProject: true})
+	mode := boot.Config.FailMode
+	if override != "" {
+		mode = override
+	}
+	if observe != nil {
+		observe(mode)
+	}
 	input, err := hookio.DecodePostToolUse(stdin)
 	if err != nil {
 		return postFailure(mode, "input decoding")
 	}
-	store, err := state.New(state.Options{})
+	loaded, policyErr := loadHookPolicy(input.CWD, override, profile)
+	mode = loaded.Config.FailMode
+	if observe != nil {
+		observe(mode)
+	}
+	warning := policyWarning(loaded, policyErr)
+	store, err := policyStore(loaded.Config)
 	if err != nil {
 		return postFailure(mode, "state initialization")
 	}
 	record := audit.Record{Session: input.SessionID, Hook: "PostToolUse", Tool: input.ToolName, Decision: "allow", FailMode: mode}
+	if warning != "" {
+		record.PolicyWarnings = []string{warning}
+	}
 	failure := func(stage string) postOutcome {
 		record.Rule = "post.error"
 		record.Reason = "post hook error at " + stage + "; state persistence not confirmed"
@@ -100,6 +127,12 @@ func processPost(stdin io.Reader, classifier *taint.Classifier, mode string) pos
 			return postFailure(mode, stage+" and audit persistence")
 		}
 		return postFailure(mode, stage)
+	}
+	if classifier == nil {
+		classifier, err = taint.New(taint.FromPolicy(loaded.Config))
+		if err != nil {
+			return failure("source policy")
+		}
 	}
 	args, err := input.SourceArguments()
 	if err != nil {
@@ -146,7 +179,10 @@ func processPost(stdin io.Reader, classifier *taint.Classifier, mode string) pos
 		return o
 	}
 	if m.Tainted {
-		return postOutcome{result: hookio.AdditionalContext(m.Context())}
+		return postOutcome{result: hookio.AdditionalContext(m.Context()), failure: warning}
 	}
-	return postOutcome{}
+	if policyErr != nil && mode == "closed" {
+		return postFailure(mode, "policy loading")
+	}
+	return postOutcome{failure: warning}
 }

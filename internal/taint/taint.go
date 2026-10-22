@@ -3,17 +3,18 @@ package taint
 import (
 	"errors"
 	"fmt"
-	"os"
+	"github.com/ratuhin1122/taintwatch/internal/policy"
 	"path"
 	"strings"
 
 	"github.com/ratuhin1122/taintwatch/internal/state"
 )
 
-// Policy is the built-in source policy until M2 supplies layered policy loading.
-// ReaderCommands is additive to the standard readers. Other lists are explicit:
-// callers should start from DefaultPolicy when retaining the default globs/paths.
+// Policy is the source classifier's view of a loaded policy. FromPolicy makes
+// reader lists exact; DefaultPolicy retains the legacy additive reader API.
 type Policy struct {
+	Tools           []string
+	ExactReaders    bool
 	Profile         string
 	TrustedServers  []string
 	ReaderCommands  []string
@@ -24,11 +25,16 @@ type Policy struct {
 
 // DefaultPolicy returns independent, balanced defaults. MCP trust is empty.
 func DefaultPolicy() Policy {
-	p := Policy{Profile: "balanced", UntrustedGlobs: []string{"**/node_modules/**", "**/vendor/**", "**/.venv/**", "**/site-packages/**", "**/third_party/**"}, TempPaths: []string{os.TempDir(), "/tmp", "/var/tmp"}}
-	if home, err := os.UserHomeDir(); err == nil {
-		p.DownloadedPaths = []string{home + string(os.PathSeparator) + "Downloads"}
-	}
+	c := policy.Defaults()
+	p := FromPolicy(c)
+	p.ExactReaders = false
+	p.ReaderCommands = nil
 	return p
+}
+
+// FromPolicy uses the effective lists exactly, including explicit empty lists.
+func FromPolicy(c policy.Config) Policy {
+	return Policy{Profile: c.Profile, Tools: append([]string{}, c.Sources.Tools...), TrustedServers: append([]string{}, c.Sources.MCP.TrustedServers...), ReaderCommands: append([]string{}, c.Sources.Bash.ReaderCommands...), ExactReaders: true, UntrustedGlobs: append([]string{}, c.Sources.Read.TaintGlobs...), TempPaths: append([]string{}, c.Sources.Read.TempPaths...), DownloadedPaths: append([]string{}, c.Sources.Read.DownloadedPaths...)}
 }
 
 // Input contains normalized tool arguments, not Claude Code JSON formats.
@@ -51,7 +57,7 @@ type Match struct {
 // Context is a single factual sentence using constant source labels only. Tool
 // output, paths, URLs and server names cannot inject instructions into this text.
 func (m Match) Context() string {
-	label := map[state.SourceKind]string{state.SourceWeb: "the web", state.SourceMCP: "an MCP tool", state.SourceBash: "a shell reader command", state.SourceRead: "an untrusted file"}[m.Source]
+	label := map[state.SourceKind]string{state.SourceTool: "a configured tool", state.SourceWeb: "the web", state.SourceMCP: "an MCP tool", state.SourceBash: "a shell reader command", state.SourceRead: "an untrusted file"}[m.Source]
 	if !m.Tainted || label == "" {
 		return ""
 	}
@@ -65,8 +71,12 @@ type Classifier struct {
 	readers [][]string
 }
 
-// New validates the provisional policy before classifying sources.
+// New validates a source policy before classifying sources.
 func New(p Policy) (*Classifier, error) {
+	if p.Tools == nil {
+		p.Tools = policy.Defaults().Sources.Tools
+	}
+	p.Tools = append([]string{}, p.Tools...)
 	if p.Profile == "" {
 		p.Profile = "balanced"
 	}
@@ -89,7 +99,10 @@ func New(p Policy) (*Classifier, error) {
 		}
 	}
 	c := &Classifier{policy: p}
-	readers := append([]string{"gh issue view", "gh pr view", "gh pr diff", "gh api", "curl", "wget"}, p.ReaderCommands...)
+	readers := p.ReaderCommands
+	if !p.ExactReaders {
+		readers = append(policy.Defaults().Sources.Bash.ReaderCommands, readers...)
+	}
 	for _, reader := range readers {
 		commands, err := commandWords(reader)
 		if err != nil || len(commands) != 1 || len(commands[0]) == 0 {
@@ -103,6 +116,14 @@ func New(p Policy) (*Classifier, error) {
 // Classify applies source policy. Ambiguous or unresolvable Read paths taint
 // conservatively; no content detector participates in this decision.
 func (c *Classifier) Classify(in Input) (Match, error) {
+	enabled := false
+	for _, p := range c.policy.Tools {
+		ok, _ := path.Match(p, in.Tool)
+		enabled = enabled || ok
+	}
+	if !enabled {
+		return Match{Rule: "source.clean", Reason: "tool is not selected by source policy"}, nil
+	}
 	switch {
 	case in.Tool == "WebFetch" || in.Tool == "WebSearch":
 		return match(state.SourceWeb, "taint.web", "web content is an untrusted source"), nil
@@ -130,6 +151,9 @@ func (c *Classifier) Classify(in Input) (Match, error) {
 		}
 	case in.Tool == "Read":
 		return c.classifyRead(in), nil
+	}
+	if in.Tool != "Bash" && in.Tool != "Read" {
+		return match(state.SourceTool, "taint.tool", "tool output is an untrusted configured source"), nil
 	}
 	return Match{Rule: "source.clean", Reason: "source does not match a taint rule"}, nil
 }

@@ -35,7 +35,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestHelpAndStubs(t *testing.T) {
-	commands := [][]string{{}, {"version"}, {"explain"}, {"status"}, {"hook"}, {"hook", "pre"}, {"hook", "post"}, {"hook", "prompt"}, {"hook", "session-start"}}
+	commands := [][]string{{}, {"version"}, {"explain"}, {"status"}, {"policy"}, {"policy", "check"}, {"policy", "show"}, {"hook"}, {"hook", "pre"}, {"hook", "post"}, {"hook", "prompt"}, {"hook", "session-start"}}
 	for _, command := range commands {
 		for _, help := range []string{"--help", "-h"} {
 			args := append(append([]string{}, command...), help)
@@ -46,7 +46,7 @@ func TestHelpAndStubs(t *testing.T) {
 				}
 			})
 		}
-		if len(command) == 0 || command[0] == "version" || command[0] == "explain" || command[0] == "status" || len(command) == 1 && command[0] == "hook" || len(command) == 2 && command[0] == "hook" && (command[1] == "post" || command[1] == "pre") {
+		if len(command) == 0 || command[0] == "version" || command[0] == "policy" || command[0] == "explain" || command[0] == "status" || len(command) == 1 && command[0] == "hook" || len(command) == 2 && command[0] == "hook" && (command[1] == "post" || command[1] == "pre") {
 			continue
 		}
 		var out, errOut bytes.Buffer

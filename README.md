@@ -38,6 +38,8 @@ taintwatch hook <pre|post|prompt|session-start> [--help]
 taintwatch hook post [--profile balanced|paranoid] [--fail-mode open|closed]
 taintwatch explain [--session ID] [--last N] [--json]
 taintwatch status [--session ID]
+taintwatch policy check [file]
+taintwatch policy show
 taintwatch version [--help]
 taintwatch --help
 ```
@@ -75,7 +77,8 @@ Secure session persistence is implemented in `internal/state`; see
 [state storage](docs/STATE.md) for paths, locking, expiration, and API behavior.
 The post hook uses state and minimal redacted audit storage. See [source policy and
 post-hook behavior](docs/TAINT.md) for defaults, shell-matching gaps, audit limits,
-and error semantics. Policy layering and approval/clear commands remain future
+and error semantics. Policy layering and project anti-loosening protections are
+documented in [policy.md](docs/policy.md). Approval/clear commands remain future
 work. Audit rotation and inspection are documented in [AUDIT.md](docs/AUDIT.md).
 Default policy actions ask; deny will
 require explicit policy. This repository is licensed under MIT.

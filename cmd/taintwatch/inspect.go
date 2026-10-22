@@ -7,6 +7,7 @@ import (
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
 	"github.com/ratuhin1122/taintwatch/internal/explain"
+	"github.com/ratuhin1122/taintwatch/internal/policy"
 	"github.com/ratuhin1122/taintwatch/internal/state"
 )
 
@@ -39,7 +40,13 @@ func runInspect(name string, args []string, out, errOut io.Writer) int {
 		fmt.Fprintln(errOut, "invalid arguments; --last must be 1..1000")
 		return exitUsage
 	}
-	store, e := state.New(state.Options{})
+	loaded, e := policy.Load(policy.Options{})
+	if e != nil {
+		fmt.Fprintln(errOut, e)
+		return exitFailure
+	}
+	policyNotices(loaded, errOut)
+	store, e := policyStore(loaded.Config)
 	if e != nil {
 		fmt.Fprintln(errOut, "taintwatch "+name+": state is unavailable")
 		return exitFailure
@@ -69,7 +76,7 @@ func runInspect(name string, args []string, out, errOut io.Writer) int {
 			fmt.Fprintln(errOut, "taintwatch status: could not read session state")
 			return exitFailure
 		}
-		e = explain.Status(out, current, known, h)
+		e = explain.StatusWithPolicy(out, current, known, h, loaded.Files)
 	}
 	if e != nil {
 		fmt.Fprintln(errOut, "taintwatch "+name+": output unavailable")

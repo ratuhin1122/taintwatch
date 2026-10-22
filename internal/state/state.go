@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -36,6 +37,7 @@ const (
 	SourceMCP  SourceKind = "mcp"
 	SourceBash SourceKind = "bash"
 	SourceRead SourceKind = "read"
+	SourceTool SourceKind = "tool"
 )
 
 // TaintEvent records provenance, not a content detector's blocking decision.
@@ -78,6 +80,7 @@ type Session struct {
 // Options configures a store. Zero retention/lock timeout selects the defaults;
 // negative durations are invalid. Home overrides TAINTWATCH_HOME and XDG paths.
 type Options struct {
+	AuditPath     string
 	AuditMaxBytes int64
 	AuditKeep     int
 	Home          string
@@ -88,6 +91,7 @@ type Options struct {
 // Store serializes reads, read-modify-write operations, and cleanup through one
 // persistent advisory lock. A Store may be shared between goroutines.
 type Store struct {
+	auditFile     string
 	auditMaxBytes int64
 	auditKeep     int
 	home          string
@@ -169,17 +173,47 @@ func New(opts Options) (*Store, error) {
 	s := &Store{home: home, sessions: filepath.Join(home, "sessions"), retention: opts.Retention, lockTimeout: opts.LockTimeout, now: time.Now}
 	s.auditMaxBytes = opts.AuditMaxBytes
 	s.auditKeep = opts.AuditKeep
+	auditPath := opts.AuditPath
+	if auditPath == "" {
+		auditPath = "audit.jsonl"
+	}
+	if strings.HasPrefix(auditPath, "~/") {
+		userHome, e := os.UserHomeDir()
+		if e != nil {
+			return nil, e
+		}
+		auditPath = filepath.Join(userHome, auditPath[2:])
+	}
+	if !filepath.IsAbs(auditPath) {
+		auditPath = filepath.Join(home, auditPath)
+	}
+	s.auditFile = filepath.Clean(auditPath)
+	if s.auditFile == filepath.Join(s.home, ".lock") || s.auditFile == s.sessions || strings.HasPrefix(s.auditFile, s.sessions+string(filepath.Separator)) {
+		return nil, errors.New("audit path overlaps managed state files")
+	}
 	if err := secureDir(s.home); err != nil {
 		return nil, fmt.Errorf("prepare state home: %w", err)
 	}
 	if err := secureDir(s.sessions); err != nil {
 		return nil, fmt.Errorf("prepare sessions: %w", err)
 	}
+	parent := filepath.Dir(s.auditFile)
+	if err := os.MkdirAll(parent, 0700); err != nil {
+		return nil, err
+	}
+	info, e := os.Lstat(parent)
+	if e != nil {
+		return nil, e
+	}
+	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		return nil, errors.New("audit parent must be a real directory")
+	}
 	return s, nil
 }
 
 // Home returns the absolute managed state directory.
-func (s *Store) Home() string { return s.home }
+func (s *Store) Home() string      { return s.home }
+func (s *Store) AuditFile() string { return s.auditFile }
 
 // SanitizeSessionID preserves 1..64 ASCII letters, digits, underscores and hyphens.
 // Everything else, including empty IDs, is hashed. The 71-character hash namespace
@@ -220,7 +254,7 @@ func (s *Store) MarkTainted(id string, event TaintEvent) (Session, error) {
 			return errors.New("taint event requires a tool")
 		}
 		switch event.Source {
-		case SourceWeb, SourceMCP, SourceBash, SourceRead:
+		case SourceWeb, SourceMCP, SourceBash, SourceRead, SourceTool:
 		default:
 			return errors.New("invalid taint source kind")
 		}

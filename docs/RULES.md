@@ -1,8 +1,8 @@
 # Pre-tool action checks (M1.5)
 
 `taintwatch hook pre [--fail-mode open|closed]` loads the session snapshot and
-evaluates the built-in Go rule table. Policy loading and rule overrides arrive in
-M2. No hook is installed automatically. Only `hookio` decodes tool arguments and
+evaluates the Go rule table with the loaded YAML policy and rule overrides.
+See [policy.md](policy.md). No hook is installed automatically. Only `hookio` decodes tool arguments and
 writes Claude Code output. Safe actions emit `{}` with exit 0, preserving native
 permissions. Risk matches emit a verified PreToolUse `ask`, also with exit 0.
 No default rule denies. Every evaluated decision is recorded with its stable rule
@@ -11,7 +11,8 @@ ID, reason, evidence, and state provenance; raw command bodies are omitted.
 Rules run in this order: TW006 self-protection, TW007 decode-and-run, TW001 secret
 read, TW003 publication, TW004 destruction, TW005 protected write, TW002 egress,
 TW008 uncertain shell analysis. TW006 and TW007 apply even when clean; the rest
-require session taint. The first match wins, so force-push reports TW003. Tainted
+require session taint. The strongest matching action wins (deny, ask, allow), with
+table order breaking ties; default force-push still reports TW003. Tainted
 reasons include the latest recorded source tool and its UTC time.
 
 TW002 uses exact host matching, never domain suffix matching. Unknown destinations

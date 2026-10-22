@@ -14,19 +14,20 @@ import (
 // the completed call is not blocked; it is not a PreToolUse permission approval.
 // StateKnown disambiguates a clean snapshot from an unavailable state on errors.
 type Record struct {
-	TS           time.Time `json:"ts"`
-	Session      string    `json:"session"`
-	Hook         string    `json:"hook"`
-	Tool         string    `json:"tool"`
-	Decision     string    `json:"decision"`
-	Rule         string    `json:"rule"`
-	Reason       string    `json:"reason"`
-	Tainted      bool      `json:"tainted"`
-	StateKnown   bool      `json:"state_known"`
-	TaintSources []string  `json:"taint_sources"`
-	InputSummary string    `json:"input_summary"`
-	FailMode     string    `json:"fail_mode"`
-	Evidence     []string  `json:"evidence,omitempty"`
+	TS             time.Time `json:"ts"`
+	Session        string    `json:"session"`
+	Hook           string    `json:"hook"`
+	Tool           string    `json:"tool"`
+	Decision       string    `json:"decision"`
+	Rule           string    `json:"rule"`
+	Reason         string    `json:"reason"`
+	Tainted        bool      `json:"tainted"`
+	StateKnown     bool      `json:"state_known"`
+	TaintSources   []string  `json:"taint_sources"`
+	InputSummary   string    `json:"input_summary"`
+	FailMode       string    `json:"fail_mode"`
+	Evidence       []string  `json:"evidence,omitempty"`
+	PolicyWarnings []string  `json:"policy_warnings,omitempty"`
 }
 
 // Sink abstracts secure storage so record construction can be tested separately.
@@ -81,6 +82,10 @@ func Write(sink Sink, record Record) error {
 	return nil
 }
 func sanitize(record Record) Record {
+	record.PolicyWarnings = append([]string(nil), record.PolicyWarnings...)
+	for i := range record.PolicyWarnings {
+		record.PolicyWarnings[i] = Redact(record.PolicyWarnings[i])
+	}
 	record.Session = Redact(record.Session)
 	record.Hook = Redact(record.Hook)
 	record.Tool = Redact(record.Tool)

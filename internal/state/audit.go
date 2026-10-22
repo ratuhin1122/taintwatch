@@ -20,7 +20,7 @@ func (s *Store) AppendAudit(record []byte) error {
 	}
 	line := append(append([]byte(nil), record...), '\n')
 	return s.withLock(func() error {
-		p := filepath.Join(s.home, "audit.jsonl")
+		p := s.auditFile
 		f, e := openRegular(p, os.O_CREATE|os.O_RDWR|os.O_APPEND)
 		if e != nil {
 			return e
@@ -68,7 +68,7 @@ func (s *Store) AppendAudit(record []byte) error {
 			return closeErr
 		}
 		if originalSize == 0 {
-			dir, e := os.Open(s.home)
+			dir, e := os.Open(filepath.Dir(s.auditFile))
 			if e != nil {
 				return e
 			}
@@ -83,7 +83,7 @@ func (s *Store) AppendAudit(record []byte) error {
 	})
 }
 func (s *Store) auditPath(n int) string {
-	p := filepath.Join(s.home, "audit.jsonl")
+	p := s.auditFile
 	if n > 0 {
 		p += fmt.Sprintf(".%d", n)
 	}

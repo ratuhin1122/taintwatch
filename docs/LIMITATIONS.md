@@ -1,7 +1,7 @@
 # Limitations
 
-- Pre-tool enforcement implements built-in ask rules and self-protection; layered
-  policy overrides and approval reuse are not implemented yet.
+- Pre-tool enforcement implements layered policy, action overrides and
+  self-protection. Approval reuse and a clear-taint CLI remain future work.
 - Real Claude Code payloads and exact product transport structs remain unconfirmed.
 - Future session-level taint tracking is coarse; content detectors are telemetry only.
 - Product platforms: macOS/Linux amd64/arm64. Windows is best-effort through WSL.

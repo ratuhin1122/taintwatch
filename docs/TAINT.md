@@ -16,8 +16,9 @@ action rules described in [RULES.md](RULES.md).
 
 ## Built-in source policy
 
-`taint.DefaultPolicy()` returns a balanced `Policy` struct. M2 will replace its
-construction with layered policy loading; no YAML loader is introduced here.
+`policy.Defaults()` supplies balanced defaults; hooks use the effective layered
+YAML policy through `taint.FromPolicy`. See [policy.md](policy.md) for list merging,
+source selection and project anti-loosening protections.
 
 | Source | Default classification |
 | --- | --- |
@@ -25,7 +26,7 @@ construction with layered policy loading; no YAML loader is introduced here.
 | `mcp__*` | Taint; `TrustedServers` is empty by default |
 | Bash | Taint for a recognized reader prefix |
 | Read | Taint for dependency globs, outside-project paths, temporary/downloaded paths, or unresolved paths |
-| Other tools | No new taint; existing taint is preserved |
+| Other tools | No new taint unless selected in sources.tools; existing taint is preserved |
 
 The default reader prefixes are `gh issue view`, `gh pr view`, `gh pr diff`,
 `gh api`, `curl`, and `wget`. `ReaderCommands` adds custom literal word prefixes.

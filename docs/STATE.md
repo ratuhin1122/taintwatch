@@ -36,7 +36,7 @@ Each operation takes a session ID and returns a Session plus an error:
   to the current UTC time. Does not create JSON, touch mtime, or run cleanup.
   Corrupt, mismatched, oversized, or inconsistent state returns an error.
 - `MarkTainted(id, event)`: sets taint and appends time, tool, source (`web`, `mcp`,
-  `bash`, `read`), reason, and extracted value strings. Zero event time defaults
+  `bash`, `read`, or configured `tool`), reason, and extracted value strings. Zero event time defaults
   to now. Values remain available for the future valuematch layer.
 - `AddApproval(id, approval)`: appends time, optional tool/rule ID, reason and who.
   Does not clear taint or grant tool permissions itself.

@@ -12,7 +12,8 @@ the threshold. A record larger than a custom threshold occupies its own file;
 individual records remain capped at 64 KiB. Configure store options
 `AuditMaxBytes`/`AuditKeep`, or set `TAINTWATCH_AUDIT_MAX_BYTES` and
 `TAINTWATCH_AUDIT_KEEP` (1–20 backups). Explicit nonzero options override environment
-values. M2 may expose these settings through policy. Rotation discards the oldest
+values. YAML log.path/log.rotation and state retention settings are documented in
+[policy.md](policy.md). Rotation discards the oldest
 backup, so ask counts describe retained history, not lifetime totals.
 
 Metadata redaction runs before JSON serialization: AWS access IDs (AKIA/ASIA),
@@ -37,15 +38,15 @@ Explain defaults to the session with the newest retained audit timestamp and
 shows ten decisions (1–1000 configurable), newest first in text. JSON includes
 the session, recent records in chronological order and retained ask count.
 Reasons, rule IDs, historical taint/source information and suggested next steps
-are shown. Approval remains Claude Code's one-time approval UI; policy allowlist
-overrides and a clear-taint CLI are not implemented yet. Guidance says so explicitly.
+are shown. Approval remains Claude Code's one-time approval UI. Policy allowlist
+overrides are available; a clear-taint CLI remains future work.
 
 Status uses current persisted state for that session. Missing state is unknown
 when selecting from audit history. An explicitly requested missing session follows
 the state API's clean-session semantics. Without audit history, status falls back
 to the most recently updated saved session. Expiry and rotation can remove one
-side of this information. Policy files are reported as none: only built-in defaults
-are loaded. Inspection never refreshes session expiry. Audit reads capture open
+side of this information. Status reports the files loaded for the current cwd.
+Inspection never refreshes session expiry. Audit reads capture open
 handles and file sizes under the lock, then scan those prefixes outside the lock;
 concurrent append and rotation cannot extend those snapshots. Default-session
 selection and history collection are separate snapshots.

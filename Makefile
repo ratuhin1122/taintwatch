@@ -17,6 +17,7 @@ lint:
 	@files=$$(gofmt -l cmd internal) || exit $$?; if [ -n "$$files" ]; then printf 'Run gofmt on:\n%s\n' "$$files"; exit 1; fi
 
 fuzz:
+	$(GO) test ./internal/policy -run='^$$' -fuzz=FuzzPolicy -fuzztime=5s
 	$(GO) test ./internal/shellparse -run='^$$' -fuzz=FuzzParse -fuzztime=5s
 	$(GO) test ./cmd/taintwatch -run='^$$' -fuzz=FuzzDispatcher -fuzztime=5s
 	$(GO) test ./internal/hookio -run='^$$' -fuzz=FuzzDecoder -fuzztime=5s

@@ -26,6 +26,11 @@ func postHome(t *testing.T) string {
 	}
 	home := filepath.Join(t.TempDir(), "state")
 	t.Setenv("TAINTWATCH_HOME", home)
+	userHome := filepath.Join(t.TempDir(), "user-home")
+	t.Setenv("HOME", userHome)
+	t.Setenv("USERPROFILE", userHome)
+	t.Setenv("TAINTWATCH_AUDIT_MAX_BYTES", "")
+	t.Setenv("TAINTWATCH_AUDIT_KEEP", "")
 	return home
 }
 
@@ -96,6 +101,7 @@ func TestPostCleanSourcePreservesTaint(t *testing.T) {
 }
 
 func TestPostErrorsNeverBlock(t *testing.T) {
+	operatorHome(t)
 	for _, tc := range []struct {
 		name, input string
 		args        []string

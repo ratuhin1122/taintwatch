@@ -25,6 +25,8 @@ elif [[ "$binary" != /* || ! -x "$binary" ]]; then
 fi
 
 export TAINTWATCH_HOME="$demo_dir/state"
+export HOME="$demo_dir/user-home"
+mkdir -p -- "$HOME"
 unset TAINTWATCH_AUDIT_MAX_BYTES TAINTWATCH_AUDIT_KEEP
 mkdir -p -- "$demo_dir/project"
 printf 'DEMO_ONLY=not-a-real-secret\n' > "$demo_dir/project/.env"

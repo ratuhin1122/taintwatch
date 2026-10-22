@@ -10,6 +10,18 @@ stdout, temporary state, persisted audit records, status and explain. Run just
 this test with `go test ./internal/hookio -run TestBinarySessionFlow -count=1 -v`.
 The matching human-readable demo is `bash scripts/demo.sh`.
 
+M2.1 adds strict YAML validation/fuzzing, per-value origins, list layering,
+nearest-project discovery, explicit user opt-in, hostile-project non-loosening,
+and regular-file policy checks. Unix integration tests exercise loaded sources,
+rule actions/precedence, read globs, closed failures, audit destinations, retention
+and policy self-protection. Invalid project documents are tested to retain the
+last valid guards, including WebFetch taint tracking.
+Local M2.1 verification on 2026-10-22: Make build/race-test/lint and a short YAML
+parser fuzz campaign passed on Windows. Unix policy, storage and hook integration,
+explain goldens, binary E2E and the demo passed in WSL using fresh cross-compiled
+binaries. Those WSL runs did not use the race detector; the existing Linux/macOS
+Go 1.22/stable CI matrix remains the full Unix race-testing path.
+
 M1.7 local verification: Make build/race-test/lint targets passed on Windows;
 Unix-only E2E coverage was separately run in Ubuntu WSL against a fresh
 cross-compiled product executable using `TAINTWATCH_E2E_BINARY`. The demo also

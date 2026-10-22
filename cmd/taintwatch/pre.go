@@ -4,13 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"sync/atomic"
 	"time"
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
 	"github.com/ratuhin1122/taintwatch/internal/hookio"
+	"github.com/ratuhin1122/taintwatch/internal/policy"
 	"github.com/ratuhin1122/taintwatch/internal/rules"
 	"github.com/ratuhin1122/taintwatch/internal/shellparse"
-	"github.com/ratuhin1122/taintwatch/internal/state"
 )
 
 func preFailure(mode, stage string) postOutcome {
@@ -35,24 +36,32 @@ func runPre(args []string, in io.Reader, out, errOut io.Writer) int {
 func runPreWithin(args []string, in io.Reader, out, errOut io.Writer, timeout time.Duration) int {
 	f := flag.NewFlagSet("hook pre", flag.ContinueOnError)
 	f.SetOutput(io.Discard)
-	mode := f.String("fail-mode", "open", "internal error behavior")
+	mode := f.String("fail-mode", "", "internal error behavior; default from policy")
 	if err := f.Parse(args); err == flag.ErrHelp {
 		fmt.Fprintln(out, "Usage: taintwatch hook pre [--fail-mode open|closed]")
 		return exitOK
 	} else if err != nil || f.NArg() != 0 {
-		return finishPre(preFailure(*mode, "configuration"), out, errOut)
+		return finishPre(preFailure(userErrorMode(*mode), "configuration"), out, errOut)
 	}
-	if *mode != "open" && *mode != "closed" {
-		return finishPre(preFailure("open", "configuration"), out, errOut)
+	if *mode != "" && *mode != "open" && *mode != "closed" {
+		return finishPre(preFailure(userErrorMode(""), "configuration"), out, errOut)
 	}
 	done := make(chan postOutcome, 1)
+	var closed atomic.Bool
+	closed.Store(*mode == "closed")
+	errorMode := func() string {
+		if closed.Load() {
+			return "closed"
+		}
+		return "open"
+	}
 	go func() {
 		defer func() {
 			if recover() != nil {
-				done <- preFailure(*mode, "internal panic")
+				done <- preFailure(errorMode(), "internal panic")
 			}
 		}()
-		done <- processPre(in, *mode)
+		done <- processPreObserved(in, *mode, func(mode string) { closed.Store(mode == "closed") })
 	}()
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
@@ -60,19 +69,39 @@ func runPreWithin(args []string, in io.Reader, out, errOut io.Writer, timeout ti
 	case o := <-done:
 		return finishPre(o, out, errOut)
 	case <-timer.C:
-		return finishPre(preFailure(*mode, "deadline"), out, errOut)
+		return finishPre(preFailure(errorMode(), "deadline"), out, errOut)
 	}
 }
 func processPre(reader io.Reader, mode string) postOutcome {
+	return processPreObserved(reader, mode, nil)
+}
+func processPreObserved(reader io.Reader, override string, observe func(string)) postOutcome {
+	boot, _ := policy.Load(policy.Options{NoProject: true})
+	mode := boot.Config.FailMode
+	if override != "" {
+		mode = override
+	}
+	if observe != nil {
+		observe(mode)
+	}
 	in, err := hookio.DecodePreToolUse(reader)
 	if err != nil {
 		return preFailure(mode, "input decoding")
 	}
-	store, err := state.New(state.Options{})
+	loaded, policyErr := loadHookPolicy(in.CWD, override, "")
+	mode = loaded.Config.FailMode
+	if observe != nil {
+		observe(mode)
+	}
+	warning := policyWarning(loaded, policyErr)
+	store, err := policyStore(loaded.Config)
 	if err != nil {
 		return preFailure(mode, "state initialization")
 	}
 	record := audit.Record{Session: in.SessionID, Hook: "PreToolUse", Tool: in.ToolName, FailMode: mode}
+	if warning != "" {
+		record.PolicyWarnings = []string{warning}
+	}
 	failure := func(stage string) postOutcome {
 		record.Rule = "pre.error"
 		record.Reason = "pre hook error at " + stage
@@ -85,6 +114,9 @@ func processPre(reader io.Reader, mode string) postOutcome {
 			o.failure += " and audit persistence"
 		}
 		return o
+	}
+	if policyErr != nil && mode == "closed" {
+		return failure("policy loading")
 	}
 	args, err := in.SourceArguments()
 	if err != nil {
@@ -99,8 +131,9 @@ func processPre(reader io.Reader, mode string) postOutcome {
 	for _, e := range session.TaintEvents {
 		record.TaintSources = append(record.TaintSources, string(e.Source))
 	}
-	p := rules.DefaultPolicy()
+	p := rules.FromPolicy(loaded.Config)
 	p.StateHome = store.Home()
+	p.SelfPaths = append(append([]string{}, loaded.Files...), store.AuditFile())
 	input := rules.Input{Policy: p, Session: session, Tool: in.ToolName, CWD: in.CWD, Command: args.Command, FilePath: args.FilePath, URL: args.URL}
 	if in.ToolName == "Bash" {
 		input.Shell = shellparse.Parse(args.Command)
@@ -121,10 +154,10 @@ func processPre(reader io.Reader, mode string) postOutcome {
 	}
 	switch d.Action {
 	case rules.Ask:
-		return postOutcome{result: hookio.Ask(d.Reason)}
+		return postOutcome{result: hookio.Ask(d.Reason), failure: warning}
 	case rules.Deny:
-		return postOutcome{result: hookio.Deny(d.Reason)}
+		return postOutcome{result: hookio.Deny(d.Reason), failure: warning}
 	}
 	// Abstain rather than overriding Claude Code's own permission checks.
-	return postOutcome{}
+	return postOutcome{failure: warning}
 }

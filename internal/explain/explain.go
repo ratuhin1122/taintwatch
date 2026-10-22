@@ -59,7 +59,7 @@ func Render(w io.Writer, h audit.History, asJSON bool) error {
 		if r.Decision == "ask" {
 			fmt.Fprintln(&b, "Next: approve once in Claude Code if you trust this action.")
 			if r.Rule == "TW002" {
-				fmt.Fprintln(&b, "For repeated access, review allowing the exact destination domain when policy overrides are available.")
+				fmt.Fprintln(&b, "For repeated access, review egress.allow_domains and validate changes with taintwatch policy check.")
 			}
 			if r.Tainted {
 				fmt.Fprintln(&b, "After reviewing the untrusted content, consider clearing taint; a clear CLI is not implemented yet.")
@@ -73,6 +73,9 @@ func Render(w io.Writer, h audit.History, asJSON bool) error {
 
 // Status reports current persisted taint separately from historical decisions.
 func Status(w io.Writer, s state.Session, known bool, h audit.History) error {
+	return StatusWithPolicy(w, s, known, h, nil)
+}
+func StatusWithPolicy(w io.Writer, s state.Session, known bool, h audit.History, files []string) error {
 	var b strings.Builder
 	if h.Session == "" && s.ID == "" {
 		fmt.Fprintln(&b, "No session found.")
@@ -99,7 +102,14 @@ func Status(w io.Writer, s state.Session, known bool, h audit.History) error {
 		}
 		fmt.Fprintf(&b, "Asks in retained history: %d\n", h.Asks)
 	}
-	fmt.Fprintln(&b, "Policy files: none; built-in defaults are in effect (policy loading is pending).")
+	if len(files) == 0 {
+		fmt.Fprintln(&b, "Policy files: none; built-in defaults are in effect.")
+	} else {
+		fmt.Fprintln(&b, "Policy files in effect:")
+		for _, file := range files {
+			fmt.Fprintln(&b, "  "+text(file))
+		}
+	}
 	_, e := io.WriteString(w, b.String())
 	return e
 }

@@ -56,11 +56,11 @@ func TestBinarySessionFlow(t *testing.T) {
 	}
 	env := []string{}
 	for _, entry := range os.Environ() {
-		if !strings.HasPrefix(entry, "TAINTWATCH_") {
+		if !strings.HasPrefix(entry, "TAINTWATCH_") && !strings.HasPrefix(entry, "HOME=") {
 			env = append(env, entry)
 		}
 	}
-	env = append(env, "TAINTWATCH_HOME="+home)
+	env = append(env, "TAINTWATCH_HOME="+home, "HOME="+filepath.Join(temp, "user-home"))
 	invoke := func(input []byte, args ...string) []byte {
 		t.Helper()
 		ctx, cancel := stdcontext.WithTimeout(stdcontext.Background(), 10*time.Second)

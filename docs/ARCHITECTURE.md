@@ -10,8 +10,9 @@ flowchart TD
     Claude["Claude Code hook event: JSON on stdin"] --> Input["hookio: bounded, tolerant input decoding"]
     Input --> Pre["hook pre: normalize attempted action"]
     Input --> Post["hook post: normalize completed tool source"]
-    Policy["Built-in policy structs and rule table"] --> Rules
+    Policy["policy: built-ins → user → guarded project merge"] --> Rules
     Policy --> Taint
+    Policy -->|"Retention and audit settings"| State
     Pre --> Shell["shellparse: Bash AST and risk facts"]
     Pre --> Rules["rules: action, rule ID, reason, evidence"]
     Shell --> Rules
@@ -65,9 +66,14 @@ broken transport cannot reliably deliver an ask. Shell analysis is best-effort,
 and session-level taint loses fine-grained provenance. These are defense-in-depth
 checks, not a solution to prompt injection. See [LIMITATIONS.md](LIMITATIONS.md).
 
-Policy loading, approval reuse, a clear-taint CLI, detectors/value matching, and
-installation remain later work. Prompt and session-start hook handlers are stubs.
-Current status reports built-in defaults and no loaded policy files.
+`policy` strictly validates YAML and merges built-in, user and nearest-project
+settings. A project cannot grant itself permission to loosen protections; ignored
+changes are reported and invalid project YAML retains the last valid policy.
+Hooks, status and explain use the loaded configuration. `policy show` annotates
+each value with its origin. See [policy.md](policy.md).
+
+Approval reuse, a clear-taint CLI, detectors/value matching, and installation
+remain later work. Prompt and session-start hook handlers are stubs.
 
 ## M1 executable scenario
 
