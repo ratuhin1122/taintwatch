@@ -20,6 +20,10 @@ flowchart TD
     Shell --> Rules
     State["state: session snapshots and Unix lock"] -->|"Load taint snapshot"| Rules
     Post --> Taint["taint: source classifier"]
+    Taint -->|"Tainting response strings"| Values["valuematch: bounded extraction and encodings"]
+    Values -->|"Persist original indicators and variants"| State
+    State -->|"Retained patterns"| Matcher["valuematch: compiled Aho-Corasick"]
+    Matcher -->|"Argument matches: TW009"| Rules
     Taint -->|"MarkTainted or Touch"| State
     Rules --> Audit["audit: redact metadata and encode record"]
     Taint --> Audit
@@ -80,8 +84,10 @@ changes are reported and invalid project YAML retains the last valid policy.
 Hooks, status and explain use the loaded configuration. `policy show` annotates
 each value with its origin. See [policy.md](policy.md).
 
-Approval reuse, a clear-taint CLI, detectors/value matching, and installation
-remain later work. Prompt and session-start hook handlers are stubs.
+Value provenance stores bounded indicators and encodings in session state and
+matches later arguments through TW009. Originals are not copied into audit
+reasons. Exact matching cannot infer intent or semantic transformations; see
+[VALUEMATCH.md](VALUEMATCH.md). Native approval reuse remains unverified.
 
 ## M1 executable scenario
 

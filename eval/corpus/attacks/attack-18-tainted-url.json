@@ -55,5 +55,5 @@
       }
     }
   ],
-  "known_miss_reason": "Current rules see an allowlisted host but do not track the URL value from the tool response. Exact-value provenance checks are planned for M4; no invented future rule id is asserted."
+  "known_miss_reason": "Originally declared a miss before value provenance existed. TW009 now guards this supplied full URL even on an allowed host. The historical known_miss declaration remains for denominator continuity; the outcome is reported separately."
 }

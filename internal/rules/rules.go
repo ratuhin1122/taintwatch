@@ -67,6 +67,7 @@ var defaults = []Rule{
 	{"TW005", "tainted", Ask, "this action writes protected configuration", protected},
 	{"TW002", "tainted", Ask, "this action may send data to a host outside the allowlist", egress},
 	{"TW008", "tainted", Ask, "shell analysis cannot resolve this command safely", uncertain},
+	{"TW009", "tainted", Ask, "This argument came from untrusted content read earlier", valueMatch},
 }
 
 // Defaults returns a copy so callers cannot mutate the built-in table.
@@ -84,6 +85,7 @@ func evaluate(in Input, capture bool) (Decision, Snapshot) {
 	snapshot := Snapshot{Version: matchSchemaVersion, Matches: []string{}}
 	chosen := Decision{Action: Allow, RuleID: "default.allow", Reason: "No applicable built-in risk rule matched."}
 	matched := false
+	valueReason := ""
 	rank := map[Action]int{Allow: 0, Ask: 1, Deny: 2}
 	for _, r := range defaults {
 		override, hasOverride := in.Policy.Overrides[r.ID]
@@ -121,6 +123,13 @@ func evaluate(in Input, capture bool) (Decision, Snapshot) {
 			if !enabled {
 				continue
 			}
+			if r.ID == "TW009" {
+				r.Reason += " (" + e[0] + ")"
+				if r.Action == Ask {
+					valueReason = r.Reason + "."
+				}
+				e = []string{"exact or encoded provenance indicator matched; value omitted"}
+			}
 			if r.ID == "TW007" && e[0] == "downloaded input reaches executable code" {
 				r.Reason = "This command downloads data and executes it"
 			}
@@ -138,6 +147,9 @@ func evaluate(in Input, capture bool) (Decision, Snapshot) {
 				matched = true
 			}
 		}
+	}
+	if valueReason != "" && chosen.Action == Ask && chosen.RuleID != "TW009" {
+		chosen.Reason += " " + valueReason
 	}
 	return chosen, snapshot
 }

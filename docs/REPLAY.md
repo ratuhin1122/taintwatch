@@ -26,7 +26,7 @@ necessarily allow the action: another matching rule may still ask or deny.
 New successful PreToolUse audit records include an optional compact snapshot:
 
 ```json
-{"replay":{"version":1,"match_policy_sha256":"<64 hex characters>","matches":["TW001","TW002"]}}
+{"replay":{"version":2,"match_policy_sha256":"<64 hex characters>","matches":["TW001","TW002","TW009"]}}
 ```
 
 The vector contains every matched rule, including disabled rules, using the
@@ -34,6 +34,9 @@ historical session's taint eligibility. An empty `[]` is complete; missing/null
 matches are not. The digest identifies matching configuration and matcher schema.
 Only rule IDs and a digest are added; commands, URLs, paths, tool bodies and full
 file contents are not added to the log.
+
+Version 2 adds TW009 value provenance. Version 1 snapshots are unreplayable under
+this matcher because they cannot establish whether that additional rule matched.
 
 Replay freezes those historical matches and recorded taint, then applies candidate
 rule actions/enabled flags with the production rule order and deny/ask/allow

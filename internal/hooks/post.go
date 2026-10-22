@@ -10,6 +10,7 @@ import (
 	"github.com/ratuhin1122/taintwatch/internal/shellparse"
 	"github.com/ratuhin1122/taintwatch/internal/state"
 	"github.com/ratuhin1122/taintwatch/internal/taint"
+	"github.com/ratuhin1122/taintwatch/internal/valuematch"
 )
 
 // Post records a completed tool's provenance and informational content findings.
@@ -74,8 +75,10 @@ func Post(ctx context.Context, stdin io.Reader, override, profile string, observ
 	if err != nil {
 		return failure("source classification")
 	}
+	var values []valuematch.Value
 	if m.Tainted {
 		text, truncated := input.ResponseText(hidden.MaxBytes)
+		values = valuematch.Extract(text)
 		report := hidden.Scan(text)
 		report.Truncated = report.Truncated || truncated
 		record.Hidden = &report
@@ -86,7 +89,7 @@ func Post(ctx context.Context, stdin io.Reader, override, profile string, observ
 	}
 	var session state.Session
 	if m.Tainted {
-		session, err = store.MarkTainted(input.SessionID, state.TaintEvent{Tool: input.ToolName, Source: m.Source, Reason: m.Reason})
+		session, err = store.MarkTainted(input.SessionID, state.TaintEvent{Tool: input.ToolName, Source: m.Source, Reason: m.Reason, ValueMatches: values})
 	} else {
 		session, err = store.Touch(input.SessionID)
 	}

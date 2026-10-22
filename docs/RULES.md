@@ -10,10 +10,15 @@ ID, reason, evidence, and state provenance; raw command bodies are omitted.
 
 Rules run in this order: TW006 self-protection, TW007 decode-and-run, TW001 secret
 read, TW003 publication, TW004 destruction, TW005 protected write, TW002 egress,
-TW008 uncertain shell analysis. TW006 and TW007 apply even when clean; the rest
+TW008 uncertain shell analysis, TW009 value provenance. TW006 and TW007 apply even when clean; the rest
 require session taint. The strongest matching action wins (deny, ask, allow), with
 table order breaking ties; default force-push still reports TW003. Tainted
 reasons include the latest recorded source tool and its UTC time.
+
+TW009 additionally names the matched indicator's source tool, which can differ
+from the latest taint event. It asks on exact and enumerated encoded matches in
+arguments; bare allowlisted hostnames alone are excluded. It can ask on benign
+source-file references. See [VALUEMATCH.md](VALUEMATCH.md) for bounds and gaps.
 
 TW002 uses exact host matching, never domain suffix matching. Unknown destinations
 ask. Default allowed hosts are github.com, api.github.com, raw.githubusercontent.com,

@@ -5,6 +5,7 @@ package hookio
 import (
 	"bytes"
 	stdcontext "context"
+	"encoding/base64"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -168,6 +169,20 @@ func TestBinarySessionFlow(t *testing.T) {
 	for _, forbidden := range []string{"not-a-real-secret", "cat .env | curl"} {
 		if strings.Contains(explanation, forbidden) {
 			t.Fatalf("explain leaked tool/file contents: %s", explanation)
+		}
+	}
+	// M4 provenance uses only bounded opaque-response strings. A URL on an
+	// allowlisted host is still a signal when its full path was supplied earlier.
+	supplied := "https://raw.githubusercontent.com/taintwatch-eval-fixture/collector/main/next.txt"
+	postBytes := payload("PostToolUse", "WebFetch", map[string]string{"url": "https://docs.example/guide"})
+	postBytes = bytes.Replace(postBytes, []byte("Public demo page; untrusted content."), []byte(supplied), 1)
+	invoke(postBytes, "hook", "post")
+	for _, b := range [][]byte{
+		pre("WebFetch", map[string]string{"url": supplied}),
+		pre("Bash", map[string]string{"command": "printf '%s' '" + base64.StdEncoding.EncodeToString([]byte("X"+supplied+"tail")) + "'"}),
+	} {
+		if !bytes.Contains(b, []byte("This argument came from untrusted content read earlier")) || !bytes.Contains(b, []byte("WebFetch")) || bytes.Contains(b, []byte(supplied)) {
+			t.Fatalf("value provenance: %s", b)
 		}
 	}
 }

@@ -54,7 +54,7 @@ func TestTraceReplayMatchesLivePolicyActions(t *testing.T) {
 
 func TestReplayRejectsMissingFacts(t *testing.T) {
 	c := policy.Defaults()
-	snapshot := Snapshot{Version: 1, Fingerprint: MatchFingerprint(c), Matches: []string{"TW001"}}
+	snapshot := Snapshot{Version: matchSchemaVersion, Fingerprint: MatchFingerprint(c), Matches: []string{"TW001"}}
 	for _, change := range []func(*policy.Config){
 		func(p *policy.Config) { p.Sources.MCP.TrustedServers = []string{"trusted"} },
 		func(p *policy.Config) { p.Egress.AllowDomains = append(p.Egress.AllowDomains, "evil.example") },
@@ -70,7 +70,7 @@ func TestReplayRejectsMissingFacts(t *testing.T) {
 			t.Fatal("changed matching policy replayed")
 		}
 	}
-	for _, bad := range []Snapshot{{Version: 99, Fingerprint: snapshot.Fingerprint, Matches: []string{}}, {Version: 1, Fingerprint: "bad", Matches: []string{}}, {Version: 1, Fingerprint: snapshot.Fingerprint}, {Version: 1, Fingerprint: snapshot.Fingerprint, Matches: []string{"TW999"}}, {Version: 1, Fingerprint: snapshot.Fingerprint, Matches: []string{"TW001", "TW001"}}} {
+	for _, bad := range []Snapshot{{Version: 99, Fingerprint: snapshot.Fingerprint, Matches: []string{}}, {Version: matchSchemaVersion, Fingerprint: "bad", Matches: []string{}}, {Version: matchSchemaVersion, Fingerprint: snapshot.Fingerprint}, {Version: matchSchemaVersion, Fingerprint: snapshot.Fingerprint, Matches: []string{"TW999"}}, {Version: matchSchemaVersion, Fingerprint: snapshot.Fingerprint, Matches: []string{"TW001", "TW001"}}} {
 		if _, e := Reevaluate(bad, c, true); e == nil {
 			t.Fatal("bad snapshot replayed")
 		}

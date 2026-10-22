@@ -189,7 +189,8 @@ not automatically tainted merely because those tools appear in sources.tools.
 
 Extra regexes search the tool name, raw Bash command, file path, or WebFetch URL.
 They **add** matches; they cannot narrow a built-in predicate. The rule's original
-`when` (tainted or always) still applies. Known IDs are TW001–TW008. All matching
+`when` (tainted or always) still applies. Known IDs are TW001–TW009. TW009 asks on
+exact/encoded value provenance; see [VALUEMATCH.md](VALUEMATCH.md). All matching
 enabled rules are considered: deny outranks ask, which outranks allow. Table order
 breaks ties, preserving M1 reasons. This avoids an early allow/ask override masking
 a later stronger rule. Allow means Taintwatch abstains; native Claude permissions

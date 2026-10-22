@@ -62,7 +62,7 @@ func TestMalformedAndLegacy(t *testing.T) {
 		t.Fatal(got)
 	}
 	for _, matches := range []string{"", `,"matches":null`} {
-		text := fmt.Sprintf(`{"hook":"PreToolUse","decision":"allow","rule":"default.allow","state_known":true,"replay":{"version":1,"match_policy_sha256":%q%s}}`+"\n", rules.MatchFingerprint(c), matches)
+		text := fmt.Sprintf(`{"hook":"PreToolUse","decision":"allow","rule":"default.allow","state_known":true,"replay":{"version":2,"match_policy_sha256":%q%s}}`+"\n", rules.MatchFingerprint(c), matches)
 		r, e = Compare(strings.NewReader(text), c)
 		if e != nil || r.Replayed != 0 || len(r.Unreplayable) != 1 {
 			t.Fatal("missing match vector inferred as empty", r, e)

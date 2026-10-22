@@ -24,10 +24,13 @@ not establish that a session, command, document or destination is safe.
   Decode-and-run analysis has bounded traversal and literal expansion; its
   Python/Node scanner is not a full language parser. Dynamic imports, reflection,
   cross-command write/execute flows and control-flow joins can evade analysis.
-- **Value provenance gaps.** The current implementation does not propagate exact
-  tainted values into later action checks. Transformed, encoded or paraphrased
-  values can evade value matching; future exact-value matching alone will not
-  recover semantic equivalence or infer an application's eventual behavior.
+- **Value provenance gaps.** TW009 matches exact indicators and a bounded set of
+  encoded forms. Paraphrased, split or otherwise transformed values, nested
+  encodings, unsupported formats and data beyond the retention/scan budgets can
+  evade it. Matches can also cause benign asks, including source files named by
+  an MCP search. Base64 interior cores can collide. This does not recover semantic
+  equivalence or infer an application's eventual behavior. See
+  [VALUEMATCH.md](VALUEMATCH.md).
 - **Allowlisted destinations can exfiltrate.** Host trust does not establish
   repository ownership, account identity, URL-path trust or upload intent.
   Attacker-controlled resources on an allowed host can evade egress checks unless

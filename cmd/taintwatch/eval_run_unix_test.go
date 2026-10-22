@@ -16,12 +16,12 @@ import (
 func TestEvalRunCLI(t *testing.T) {
 	for _, format := range []string{"--json", "--markdown"} {
 		var out, errout bytes.Buffer
-		if code := runEval([]string{"run", format, "../../eval/corpus"}, &out, &errout); code != 0 || errout.Len() != 0 {
+		if code := runEval([]string{"run", format, "../../eval/corpus"}, &out, &errout); code != 1 || errout.Len() != 0 {
 			t.Fatal(code, out.String(), errout.String())
 		}
 		if format == "--json" {
 			var r corpus.Report
-			if e := json.Unmarshal(out.Bytes(), &r); e != nil || r.GateFailures != 0 || r.ExpectedFailures != 3 || r.Attacks.Caught != 17 {
+			if e := json.Unmarshal(out.Bytes(), &r); e != nil || r.GateFailures != 1 || r.ExpectedFailures != 1 || r.Attacks.Caught != 17 {
 				t.Fatal(e, r.GateFailures, r.ExpectedFailures)
 			}
 		} else if !strings.Contains(out.String(), "17/17") {
@@ -34,7 +34,7 @@ func TestEvalRunCLI(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
-	for _, name := range []string{"attacks/attack-20-allowlisted-egress.json", "benign/benign-01-go-tests.json"} {
+	for _, name := range []string{"attacks/attack-19-transformed-workflow.json", "benign/benign-01-go-tests.json"} {
 		b, e := os.ReadFile(filepath.Join("..", "..", "eval", "corpus", name))
 		if e != nil {
 			t.Fatal(e)

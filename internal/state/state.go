@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ratuhin1122/taintwatch/internal/valuematch"
 )
 
 const (
@@ -42,11 +44,12 @@ const (
 
 // TaintEvent records provenance, not a content detector's blocking decision.
 type TaintEvent struct {
-	Time   time.Time  `json:"time"`
-	Tool   string     `json:"tool"`
-	Source SourceKind `json:"source"`
-	Reason string     `json:"reason"`
-	Values []string   `json:"values,omitempty"`
+	Time         time.Time          `json:"time"`
+	Tool         string             `json:"tool"`
+	Source       SourceKind         `json:"source"`
+	Reason       string             `json:"reason"`
+	Values       []string           `json:"values,omitempty"`
+	ValueMatches []valuematch.Value `json:"value_matches,omitempty"`
 }
 
 // Approval records an explicit approval supplied by a future trusted caller.
@@ -271,7 +274,37 @@ func (s *Store) MarkTainted(id string, event TaintEvent) (Session, error) {
 		} else {
 			event.Time = event.Time.UTC()
 		}
-		event.Values = append([]string(nil), event.Values...)
+		originals := []string{}
+		for _, v := range event.Values {
+			if len(originals) >= valuematch.MaxValues {
+				break
+			}
+			if len(v) >= 4 && len(v) <= valuematch.MaxValueBytes {
+				originals = append(originals, v)
+			}
+		}
+		event.Values = originals
+		// Only bounded extracted indicators and their deterministic encodings enter
+		// state. Recompute from originals to avoid trusting caller-supplied patterns.
+		bounded := []valuematch.Value{}
+		for _, v := range event.ValueMatches {
+			if len(bounded) >= valuematch.MaxValues {
+				break
+			}
+			if !valuematch.Valid(v) {
+				continue
+			}
+			v.Variants = valuematch.Variants(v.Text)
+			bounded = append(bounded, v)
+		}
+		event.ValueMatches = bounded
+		if len(bounded) > 0 {
+			// Preserve the original taint-event string view for existing readers.
+			event.Values = make([]string, len(bounded))
+			for i, v := range bounded {
+				event.Values[i] = v.Text
+			}
+		}
 		session.Tainted = true
 		session.TaintEvents = append(session.TaintEvents, event)
 		return nil

@@ -30,6 +30,12 @@ This is storage protection, not authentication of an agent or a user.
 
 ## Operations
 
+Taint events now retain bounded `value_matches` entries (kind, original text and
+precomputed variants). These may contain sensitive URL parameters or paths;
+session state is not redacted audit output. Old events without the entries do
+not acquire provenance retrospectively. Clear removes these events along with
+taint. See [VALUEMATCH.md](VALUEMATCH.md) for bounds and privacy implications.
+
 Each operation takes a session ID and returns a Session plus an error:
 
 - `Load(id)`: missing file returns a clean, unsaved session with timestamps set

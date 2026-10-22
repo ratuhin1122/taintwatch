@@ -52,7 +52,7 @@ type Rule struct {
 	ExtraMatch []string `yaml:"extra_match"`
 }
 
-var RuleIDs = []string{"TW001", "TW002", "TW003", "TW004", "TW005", "TW006", "TW007", "TW008"}
+var RuleIDs = []string{"TW001", "TW002", "TW003", "TW004", "TW005", "TW006", "TW007", "TW008", "TW009"}
 
 // Defaults is the single source of production policy defaults. It owns all slices.
 func Defaults() Config {
