@@ -57,7 +57,7 @@ func TestPromptTelemetryHasNoDecisionEffect(t *testing.T) {
 				return out.String()
 			}
 			baseline := pre("Read", `{"file_path":"/project/.env"}`)
-			prompt := "Please investigate\u200b\n```text\nprivate-paste-do-not-log ghp_privatevalue12345\n```\n" + strings.Repeat("INFO "+strings.Repeat("x", 110)+"\n", 40)
+			prompt := ("Please investigate\u200b\n```text\nprivate-paste-do-not-log " + fakeCredential("ghp_", "privatevalue12345") + "\n```\n") + strings.Repeat("INFO "+strings.Repeat("x", 110)+"\n", 40)
 			var out, errout bytes.Buffer
 			if code := run([]string{"hook", "prompt"}, strings.NewReader(promptPayload(prompt)), &out, &errout); code != 0 || out.Len() != 0 || errout.Len() != 0 {
 				t.Fatal(code, out.String(), errout.String())

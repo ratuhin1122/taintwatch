@@ -58,7 +58,7 @@ func TestMalformedAndLegacy(t *testing.T) {
 	if r, e = Compare(strings.NewReader(""), c); e != nil || r.Records != 0 {
 		t.Fatal(r, e)
 	}
-	if got := display("name\u202e\x1b Bearer privatevalue12345"); strings.ContainsAny(got, "\u202e\x1b") || strings.Contains(got, "privatevalue") {
+	if got := display(("name\u202e\x1b " + fakeCredential("Bearer ", "privatevalue12345"))); strings.ContainsAny(got, "\u202e\x1b") || strings.Contains(got, "privatevalue") {
 		t.Fatal(got)
 	}
 	for _, matches := range []string{"", `,"matches":null`} {

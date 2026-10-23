@@ -7,7 +7,7 @@ import (
 )
 
 func TestEncodedMetadataRedactionAndIsolation(t *testing.T) {
-	e := &encoded.Report{Findings: []encoded.Finding{{Encoding: "Bearer privatevalue12345", Type: "token=privatevalue12345", Count: 1}}}
+	e := &encoded.Report{Findings: []encoded.Finding{{Encoding: (fakeCredential("Bearer ", "privatevalue12345")), Type: (fakeCredential("token=", "privatevalue12345")), Count: 1}}}
 	sink := &memorySink{}
 	if err := Write(sink, Record{Encoded: e}); err != nil {
 		t.Fatal(err)

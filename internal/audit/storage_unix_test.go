@@ -16,7 +16,7 @@ func TestSecretsNeverReachLog(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	secret := "AKIAABCDEFGHIJKLMNOP ghp_fixture123456789 Bearer fixturebearer123 password=fixturepassword -----BEGIN PRIVATE KEY-----\nfixtureprivate\n-----END PRIVATE KEY-----"
+	secret := (fakeCredential("AKIA", "ABCDEFGHIJKLMNOP") + " " + fakeCredential("ghp_", "fixture123456789") + " " + fakeCredential("Bearer ", "fixturebearer123") + (" " + fakeCredential("password=", "fixturepassword") + " ") + fakeCredential("-----BEG", "IN PRIVATE KEY-----") + "\nfixtureprivate\n-----END PRIVATE KEY-----")
 	if e = Write(s, Record{Session: "session", Reason: secret, Evidence: []string{secret}, TaintSources: []string{secret}, InputSummary: "full file content fixturecontent"}); e != nil {
 		t.Fatal(e)
 	}
@@ -24,7 +24,7 @@ func TestSecretsNeverReachLog(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	for _, v := range []string{"AKIAABCDEFGHIJKLMNOP", "fixture123456789", "fixturebearer123", "fixturepassword", "fixtureprivate", "fixturecontent"} {
+	for _, v := range []string{(fakeCredential("AKIA", "ABCDEFGHIJKLMNOP")), "fixture123456789", "fixturebearer123", "fixturepassword", "fixtureprivate", "fixturecontent"} {
 		if strings.Contains(string(b), v) {
 			t.Fatalf("leaked %s", v)
 		}

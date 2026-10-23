@@ -101,7 +101,7 @@ func TestRender(t *testing.T) {
 			}
 		})
 	}
-	if got := safe("bad|\u202e\nBearer private-secret-value"); strings.ContainsAny(got, "\u202e\n") || strings.Contains(got, "private-secret-value") || !strings.Contains(got, `\|`) {
+	if got := safe(("bad|\u202e\n" + fakeCredential("Bearer ", "private-secret-value"))); strings.ContainsAny(got, "\u202e\n") || strings.Contains(got, "private-secret-value") || !strings.Contains(got, `\|`) {
 		t.Fatal(got)
 	}
 }

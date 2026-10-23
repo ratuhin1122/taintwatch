@@ -20,7 +20,7 @@ func (s memorySource) ScanAudit(fn func([]byte) error) error {
 func TestQuery(t *testing.T) {
 	var source memorySource
 	for _, r := range []Record{
-		{TS: time.Unix(3, 0), Session: "new", Hook: "PreToolUse", Decision: "ask", Reason: "token=abcdefghijk12345"},
+		{TS: time.Unix(3, 0), Session: "new", Hook: "PreToolUse", Decision: "ask", Reason: (fakeCredential("token=", "abcdefghijk12345"))},
 		{TS: time.Unix(1, 0), Session: "old", Hook: "PreToolUse", Decision: "ask"},
 		{TS: time.Unix(2, 0), Session: "new", Hook: "PostToolUse", Decision: "allow"},
 	} {
@@ -44,16 +44,16 @@ func TestQuery(t *testing.T) {
 }
 func TestTypedRedaction(t *testing.T) {
 	for _, tc := range []struct{ input, kind, secret string }{
-		{"AKIAABCDEFGHIJKLMNOP", "aws", "AKIAABCDEFGHIJKLMNOP"},
-		{"ASIAABCDEFGHIJKLMNOP", "aws", "ASIAABCDEFGHIJKLMNOP"},
-		{"github_pat_123456789abcdef", "github", "123456789abcdef"},
-		{"ghp_123456789abcdef", "github", "123456789abcdef"},
-		{"Bearer publicfixture123456", "bearer", "publicfixture123456"},
-		{"-----BEGIN RSA PRIVATE KEY-----\nprivatefixture\n-----END RSA PRIVATE KEY-----", "private-key", "privatefixture"},
-		{"-----BEGIN OPENSSH PRIVATE KEY-----\nincompletefixture", "private-key", "incompletefixture"},
-		{`"password": "A9z7L2wX8rV6pQ4sT1u"`, "credential", "A9z7L2wX8rV6pQ4sT1u"},
+		{(fakeCredential("AKIA", "ABCDEFGHIJKLMNOP")), "aws", (fakeCredential("AKIA", "ABCDEFGHIJKLMNOP"))},
+		{(fakeCredential("ASIA", "ABCDEFGHIJKLMNOP")), "aws", (fakeCredential("ASIA", "ABCDEFGHIJKLMNOP"))},
+		{(fakeCredential("github_pat_", "123456789abcdef")), "github", "123456789abcdef"},
+		{(fakeCredential("ghp_", "123456789abcdef")), "github", "123456789abcdef"},
+		{(fakeCredential("Bearer ", "publicfixture123456")), "bearer", "publicfixture123456"},
+		{(fakeCredential("-----BEG", "IN RSA PRIVATE KEY-----") + "\nprivatefixture\n-----END RSA PRIVATE KEY-----"), "private-key", "privatefixture"},
+		{(fakeCredential("-----BEG", "IN OPENSSH PRIVATE KEY-----") + "\nincompletefixture"), "private-key", "incompletefixture"},
+		{("\"" + fakeCredential("password\": \"", "A9z7L2wX8rV6pQ4sT1u") + "\""), "credential", "A9z7L2wX8rV6pQ4sT1u"},
 		{"client_secret='two word secret'", "credential", "two word secret"},
-		{"API_KEY=AbCd0123456789ZZxx", "credential", "AbCd0123456789ZZxx"},
+		{(fakeCredential("API_KEY=", "AbCd0123456789ZZxx")), "credential", "AbCd0123456789ZZxx"},
 		{`token="[REDACTED:github] stillsecret"`, "credential", "stillsecret"},
 		{`password="start\"trailingsecret"`, "credential", "trailingsecret"},
 	} {

@@ -16,14 +16,14 @@ func (s *memorySink) AppendAudit(b []byte) error { s.data = append([]byte(nil), 
 
 func TestRedaction(t *testing.T) {
 	for _, tc := range []struct{ input, secret string }{
-		{"sk-secretvalue12345", "sk-secretvalue12345"},
-		{"mcp__sk-secretvalue12345__read", "sk-secretvalue12345"},
-		{"ghp_secretvalue12345", "ghp_secretvalue12345"},
-		{"AKIAABCDEFGHIJKLMNOP", "AKIAABCDEFGHIJKLMNOP"},
+		{(fakeCredential("sk-", "secretvalue12345")), (fakeCredential("sk-", "secretvalue12345"))},
+		{("mcp__" + fakeCredential("sk-", "secretvalue12345__read")), (fakeCredential("sk-", "secretvalue12345"))},
+		{(fakeCredential("ghp_", "secretvalue12345")), (fakeCredential("ghp_", "secretvalue12345"))},
+		{(fakeCredential("AKIA", "ABCDEFGHIJKLMNOP")), (fakeCredential("AKIA", "ABCDEFGHIJKLMNOP"))},
 		{"password=hunter2", "hunter2"},
-		{"Bearer secretvalue12345", "secretvalue12345"},
-		{"authorization: Bearer secretvalue12345", "secretvalue12345"},
-		{"api_key=secretvalue12345", "secretvalue12345"},
+		{(fakeCredential("Bearer ", "secretvalue12345")), "secretvalue12345"},
+		{("authorization: " + fakeCredential("Bearer ", "secretvalue12345")), "secretvalue12345"},
+		{(fakeCredential("api_key=", "secretvalue12345")), "secretvalue12345"},
 		{`password="two word secret"`, "two word secret"},
 		{`password='two word secret'`, "two word secret"},
 	} {

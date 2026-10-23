@@ -41,8 +41,8 @@ func TestBinaryAuditSecretsAndModes(t *testing.T) {
 		}
 	}
 	env = append(env, "TAINTWATCH_HOME="+home, "HOME="+filepath.Join(temp, "user"), "TAINTWATCH_AUDIT_MAX_BYTES=2048", "TAINTWATCH_AUDIT_KEEP=3")
-	canaries := []string{"AKIAABCDEFGHIJKLMNOP", "ghp_m46FakeCredential123456789", "m46BearerCredential123", "m46PasswordCredential123", "m46PrivateKeyBody", "m46OpaqueBodyNeverLog"}
-	knownSecrets := canaries[0] + " " + canaries[1] + " Bearer " + canaries[2] + " password=" + canaries[3] + "\n-----BEGIN PRIVATE KEY-----\n" + canaries[4] + "\n-----END PRIVATE KEY-----"
+	canaries := []string{(fakeCredential("AKIA", "ABCDEFGHIJKLMNOP")), (fakeCredential("ghp_", "m46FakeCredential123456789")), "m46BearerCredential123", "m46PasswordCredential123", "m46PrivateKeyBody", "m46OpaqueBodyNeverLog"}
+	knownSecrets := canaries[0] + " " + canaries[1] + " Bearer " + canaries[2] + " password=" + canaries[3] + ("\n" + fakeCredential("-----BEG", "IN PRIVATE KEY-----") + "\n") + canaries[4] + "\n-----END PRIVATE KEY-----"
 	secret := knownSecrets + "\n" + canaries[5]
 	session := "../../audit-canary"
 	auditRecords := 0

@@ -9,7 +9,7 @@ import (
 )
 
 func TestReplaySnapshotRedaction(t *testing.T) {
-	snapshot := &rules.Snapshot{Version: 1, Fingerprint: strings.Repeat("a", 64), Matches: []string{"TW001", "Bearer privatevalue12345"}}
+	snapshot := &rules.Snapshot{Version: 1, Fingerprint: strings.Repeat("a", 64), Matches: []string{"TW001", (fakeCredential("Bearer ", "privatevalue12345"))}}
 	sink := &memorySink{}
 	if e := Write(sink, Record{Replay: snapshot, InputSummary: "full payload must be omitted"}); e != nil {
 		t.Fatal(e)
@@ -21,10 +21,10 @@ func TestReplaySnapshotRedaction(t *testing.T) {
 	if e := json.Unmarshal(sink.data, &r); e != nil || r.Replay == nil || r.Replay.Matches[0] != "TW001" {
 		t.Fatal(r, e)
 	}
-	if snapshot.Matches[1] != "Bearer privatevalue12345" {
+	if snapshot.Matches[1] != (fakeCredential("Bearer ", "privatevalue12345")) {
 		t.Fatal("mutated caller snapshot")
 	}
-	r, e := DecodeRecord([]byte(`{"hook":"PreToolUse","input_summary":"accidental raw body","tool_input":{"secret":"omitted"},"reason":"Bearer privatevalue12345"}`))
+	r, e := DecodeRecord([]byte(("{\"hook\":\"PreToolUse\",\"input_summary\":\"accidental raw body\",\"tool_input\":{\"secret\":\"omitted\"},\"reason\":\"" + fakeCredential("Bearer ", "privatevalue12345") + "\"}")))
 	if e != nil || strings.Contains(r.Reason, "privatevalue") || r.InputSummary != "tool arguments and response omitted" {
 		t.Fatal(r, e)
 	}

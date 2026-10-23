@@ -22,7 +22,7 @@ func TestClearRedactsReason(t *testing.T) {
 	if _, e = s.Touch("redact"); e != nil {
 		t.Fatal(e)
 	}
-	reason := "reviewed token=privateValue123456789"
+	reason := ("reviewed " + fakeCredential("token=", "privateValue123456789"))
 	var out, errOut bytes.Buffer
 	if code := run([]string{"clear", "--session", "redact", "--reason", reason}, strings.NewReader(""), &out, &errOut); code != 0 {
 		t.Fatal(code, errOut.String())

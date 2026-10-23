@@ -9,7 +9,7 @@ import (
 )
 
 func TestHiddenAudit(t *testing.T) {
-	report := hidden.Scan("<!-- Bearer private-content-do-not-log --> \u200b раypal")
+	report := hidden.Scan(("<!-- " + fakeCredential("Bearer ", "private-content-do-not-log") + " --> \u200b раypal"))
 	sink := &memorySink{}
 	if err := Write(sink, Record{Session: "s", Decision: "allow", Hidden: &report}); err != nil {
 		t.Fatal(err)
@@ -27,7 +27,7 @@ func TestHiddenAudit(t *testing.T) {
 		t.Fatalf("record %+v", r)
 	}
 	// Defense in depth for caller-supplied excerpts, including terminal controls.
-	report = hidden.Report{Findings: []hidden.Finding{{Type: "test", Count: 1, Excerpt: "Bearer secretvalue12345\u202e\x1b"}}}
+	report = hidden.Report{Findings: []hidden.Finding{{Type: "test", Count: 1, Excerpt: (fakeCredential("Bearer ", "secretvalue12345") + "\u202e\x1b")}}}
 	if err := Write(sink, Record{Hidden: &report}); err != nil {
 		t.Fatal(err)
 	}

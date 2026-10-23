@@ -57,6 +57,11 @@ func TestHelpAndStubs(t *testing.T) {
 }
 
 func FuzzDispatcher(f *testing.F) {
+	// Post-hook error recovery now persists degradation. Keep all dispatcher
+	// fuzz state and policy discovery inside disposable directories.
+	f.Setenv("HOME", f.TempDir())
+	f.Setenv("USERPROFILE", f.TempDir())
+	f.Setenv("TAINTWATCH_HOME", f.TempDir())
 	f.Add("hook", "pre")
 	f.Add("version", "--help")
 	f.Fuzz(func(t *testing.T, command, arg string) {

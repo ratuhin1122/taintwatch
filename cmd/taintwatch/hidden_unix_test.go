@@ -37,7 +37,7 @@ func TestHiddenPostTelemetry(t *testing.T) {
 				return out.String()
 			}
 			baseline := call("ordinary response")
-			if got := call("text\u200b <!-- ghp_privatecontent12345 -->"); got != baseline {
+			if got := call(("text\u200b <!-- " + fakeCredential("ghp_", "privatecontent12345") + " -->")); got != baseline {
 				t.Fatalf("content changed hook output: %s vs %s", got, baseline)
 			}
 			b, e := os.ReadFile(filepath.Join(home, "audit.jsonl"))

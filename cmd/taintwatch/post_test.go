@@ -16,7 +16,7 @@ import (
 
 func postPayload(tool, args string) string {
 	// Synthetic documented-envelope probes, never claimed to be live captures.
-	return `{"session_id":"post-session","cwd":"/project","hook_event_name":"PostToolUse","tool_name":"` + tool + `","tool_input":` + args + `,"tool_response":{"public":"opaque","secret":"sk-secretvalue12345"}}`
+	return `{"session_id":"post-session","cwd":"/project","hook_event_name":"PostToolUse","tool_name":"` + tool + `","tool_input":` + args + (",\"tool_response\":{\"public\":\"opaque\",\"secret\":\"" + fakeCredential("sk-", "secretvalue12345") + "\"}}")
 }
 
 func postHome(t *testing.T) string {
@@ -40,7 +40,7 @@ func TestPostPersistenceAndContext(t *testing.T) {
 		flags            []string
 		tainted          bool
 	}{
-		{"web", "WebFetch", `{"url":"https://example.com/?token=secretvalue"}`, nil, true},
+		{"web", "WebFetch", ("{\"url\":\"https://example.com/?" + fakeCredential("token=", "secretvalue") + "\"}"), nil, true},
 		{"search", "WebSearch", `{"query":"public search"}`, nil, true},
 		{"mcp", "mcp__public__read", `{}`, nil, true},
 		{"reader", "Bash", `{"command":"curl https://example.com"}`, nil, true},
