@@ -1,6 +1,6 @@
 # Disposable hook-format probe
 
-No product packages or policy engine. Standard library only, Go 1.22+.
+No product packages or policy engine. Standard library only, Go 1.26+.
 `PreToolUse` saves the raw payload then returns `ask`; `PostToolUse` saves the raw
 payload and returns `{}`. Failures/timeouts fail open (stderr, exit 0, no JSON).
 Input is limited to 8 MiB; process work to 3 seconds; Claude hook timeout is 5 seconds.

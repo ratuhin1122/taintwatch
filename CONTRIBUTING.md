@@ -4,13 +4,13 @@ Start with a small issue or pull request describing the observable behavior and 
 
 ## Development
 
-Use Go 1.22+, Make, a POSIX shell, and a race-capable C toolchain on Linux/macOS. Windows contributors should use WSL for runtime state tests. From the checkout root:
+Use Go 1.26+, Make, a POSIX shell, and a race-capable C toolchain on Linux/macOS. Windows contributors should use WSL for runtime state tests. From the checkout root:
 
 ```sh
 make build test lint
 ```
 
-CI covers Ubuntu/macOS and Go 1.22/latest. Eval is a separate strict gate: the current corpus has one unexpected benign TW009 ask. See the exact reproduction command and measured baseline in [EVAL.md](docs/EVAL.md); do not hide it by changing an expected allow to ask without a reviewed behavioral reason.
+CI covers Ubuntu/macOS and Go 1.26.x/stable. Eval is a separate strict gate: declared harmful-step known misses are expected failures; every other expectation mismatch and every passing known-miss scenario fails CI. See the exact reproduction command and measured baseline in [EVAL.md](docs/EVAL.md); do not hide it by changing an expected allow to ask without a reviewed behavioral reason.
 
 ## Changes and validation
 

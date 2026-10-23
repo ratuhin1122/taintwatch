@@ -28,7 +28,7 @@ remote configuration are not resolved. These host exceptions are not a promise
 that sending secrets to an allowed host is safe.
 
 The parser uses mvdan.cc/sh/v3/syntax v3.8.0 (Go 1.21 minimum, compatible with the
-project's Go 1.22 minimum): [module declaration](https://github.com/mvdan/sh/blob/v3.8.0/go.mod).
+project's Go 1.26 supported minimum): [module declaration](https://github.com/mvdan/sh/blob/v3.8.0/go.mod).
 It visits Bash syntax without executing anything, retaining commands, pipelines,
 lists, redirections, heredocs, substitutions and subshells. Literal quoting and
 common wrappers are recognized. Literal shell `-c` scripts and eval are inspected

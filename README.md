@@ -7,7 +7,7 @@ Contain prompt injection in Claude Code by tracking untrusted content and gating
 [![CI](https://github.com/ratuhin1122/taintwatch/actions/workflows/ci.yml/badge.svg)](https://github.com/ratuhin1122/taintwatch/actions/workflows/ci.yml)
 [![Release: not yet published](https://img.shields.io/badge/release-not%20yet%20published-lightgrey)](#install)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Go: 1.22+](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](go.mod)
+[![Go: 1.26+](https://img.shields.io/badge/Go-1.26%2B-00ADD8)](go.mod)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-526580)](.claude-plugin/plugin.json)
 
 ## Demo
@@ -86,7 +86,7 @@ See [architecture](docs/ARCHITECTURE.md) and the [verified/unverified compatibil
 
 ### Build the binary first
 
-Requires Linux or macOS, Go 1.22+, Make, Git, and a POSIX shell. From an existing checkout, these commands build, exercise the synthetic decision scenario, and put the binary on your user PATH:
+Requires Linux or macOS, Go 1.26+, Make, Git, and a POSIX shell. From an existing checkout, these commands build, exercise the synthetic decision scenario, and put the binary on your user PATH:
 
 ```sh
 make build VERSION=0.1.0

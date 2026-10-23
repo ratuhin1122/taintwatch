@@ -110,7 +110,7 @@ For a recording, run `bash scripts/demo.sh` from any working directory. It build
 the executable, displays the same checks and reasons, then prints explain/status.
 Requests use fixture data; the displayed shell commands are hook inputs. The
 temporary project, fake `.env`, binary and state are removed on exit. Bash, Go
-1.22+ and standard Unix utilities are sufficient; jq/Python are not required.
+1.26+ and standard Unix utilities are sufficient; jq/Python are not required.
 For WSL without a Go SDK, an absolute `TAINTWATCH_DEMO_BINARY` may point to a
 fresh cross-compiled Linux executable. The subprocess test similarly accepts
 `TAINTWATCH_E2E_BINARY` for that verification setup; normal CI compiles afresh.

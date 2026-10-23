@@ -371,7 +371,7 @@ Definitions:
   normalized as allow only for scoring; no explicit permission allow is emitted.
 
 CI runs `./build/taintwatch eval run --markdown` on the existing Ubuntu/macOS,
-Go 1.22/stable matrix after build/race tests/lint. Harness tests cover metric
+Go 1.26.x/stable matrix after build/race tests/lint. Harness tests cover metric
 arithmetic, partial catches, empty denominators, expected-failure boundaries,
 output goldens, exact gate exit status, cancellation, repeatability, isolated
 state, hostile operator policy/environment, and the real corpus. Corpus metrics

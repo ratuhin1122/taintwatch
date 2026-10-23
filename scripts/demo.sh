@@ -16,7 +16,7 @@ trap 'rm -rf -- "$demo_dir"' EXIT
 # build the real executable from this checkout, independent of the caller's cwd.
 binary=${TAINTWATCH_DEMO_BINARY:-}
 if [[ -z "$binary" ]]; then
-  command -v go >/dev/null || { printf 'Go 1.22+ is required to build the demo.\n' >&2; exit 1; }
+  command -v go >/dev/null || { printf 'Go 1.26+ is required to build the demo.\n' >&2; exit 1; }
   binary="$demo_dir/taintwatch"
   (cd -- "$repo_root" && go build -o "$binary" ./cmd/taintwatch)
 elif [[ "$binary" != /* || ! -x "$binary" ]]; then
