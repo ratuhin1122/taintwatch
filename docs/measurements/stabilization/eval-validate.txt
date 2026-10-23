@@ -1,0 +1,2 @@
+Valid corpus: 74 scenarios (35 attacks, 39 benign), 164 steps, 88 action expectations, 1 known misses.
+Validation only; no hooks or tools were executed, and no effectiveness metrics were measured.

@@ -1,0 +1,22 @@
+go vet ./...
+go test -race ./...
+ok  	github.com/ratuhin1122/taintwatch/cmd/taintwatch	29.377s
+ok  	github.com/ratuhin1122/taintwatch/internal/audit	2.812s
+?   	github.com/ratuhin1122/taintwatch/internal/detect	[no test files]
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/decoderun	1.125s
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/encoded	2.005s
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/hidden	7.074s
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/pasted	3.066s
+ok  	github.com/ratuhin1122/taintwatch/internal/eval	7.641s
+ok  	github.com/ratuhin1122/taintwatch/internal/explain	1.063s
+ok  	github.com/ratuhin1122/taintwatch/internal/hookio	11.428s
+ok  	github.com/ratuhin1122/taintwatch/internal/hooks	5.286s
+ok  	github.com/ratuhin1122/taintwatch/internal/install	1.919s
+ok  	github.com/ratuhin1122/taintwatch/internal/policy	1.490s
+ok  	github.com/ratuhin1122/taintwatch/internal/replay	1.249s
+ok  	github.com/ratuhin1122/taintwatch/internal/rules	1.928s
+ok  	github.com/ratuhin1122/taintwatch/internal/shellparse	1.047s
+ok  	github.com/ratuhin1122/taintwatch/internal/state	9.939s
+ok  	github.com/ratuhin1122/taintwatch/internal/taint	1.106s
+ok  	github.com/ratuhin1122/taintwatch/internal/valuematch	1.753s
+EXIT=0

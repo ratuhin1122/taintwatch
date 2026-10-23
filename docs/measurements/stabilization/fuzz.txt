@@ -1,0 +1,225 @@
+go test ./internal/detect/encoded -run='^$' -fuzz=FuzzScan -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/133 completed
+fuzz: elapsed: 1s, gathering baseline coverage: 133/133 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 4736 (1579/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 6s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 9s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 12s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 15s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 18s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 21s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 24s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 27s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 30s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+fuzz: elapsed: 31s, execs: 4736 (0/sec), new interesting: 6 (total: 139)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/encoded	31.163s
+go test ./internal/valuematch -run='^$' -fuzz=FuzzExtractMatch -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/130 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 130/130 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 3158 (1052/sec), new interesting: 8 (total: 138)
+fuzz: elapsed: 6s, execs: 48773 (15207/sec), new interesting: 31 (total: 161)
+fuzz: elapsed: 9s, execs: 64651 (5294/sec), new interesting: 45 (total: 175)
+fuzz: elapsed: 12s, execs: 64651 (0/sec), new interesting: 45 (total: 175)
+fuzz: elapsed: 15s, execs: 64651 (0/sec), new interesting: 45 (total: 175)
+fuzz: elapsed: 18s, execs: 64651 (0/sec), new interesting: 45 (total: 175)
+fuzz: elapsed: 21s, execs: 64651 (0/sec), new interesting: 45 (total: 175)
+fuzz: elapsed: 24s, execs: 110761 (15371/sec), new interesting: 55 (total: 185)
+fuzz: elapsed: 27s, execs: 110761 (0/sec), new interesting: 55 (total: 185)
+fuzz: elapsed: 30s, execs: 136561 (8601/sec), new interesting: 61 (total: 191)
+fuzz: elapsed: 31s, execs: 136561 (0/sec), new interesting: 61 (total: 191)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/valuematch	31.150s
+go test ./internal/replay -run='^$' -fuzz=FuzzCompare -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/227 completed
+fuzz: elapsed: 1s, gathering baseline coverage: 227/227 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 12748 (4249/sec), new interesting: 2 (total: 229)
+fuzz: elapsed: 6s, execs: 34760 (7337/sec), new interesting: 7 (total: 234)
+fuzz: elapsed: 9s, execs: 53615 (6283/sec), new interesting: 9 (total: 236)
+fuzz: elapsed: 12s, execs: 74626 (7003/sec), new interesting: 14 (total: 241)
+fuzz: elapsed: 15s, execs: 96657 (7345/sec), new interesting: 24 (total: 251)
+fuzz: elapsed: 18s, execs: 115690 (6344/sec), new interesting: 27 (total: 254)
+fuzz: elapsed: 21s, execs: 135061 (6457/sec), new interesting: 30 (total: 257)
+fuzz: elapsed: 24s, execs: 154820 (6587/sec), new interesting: 31 (total: 258)
+fuzz: elapsed: 27s, execs: 178448 (7877/sec), new interesting: 33 (total: 260)
+fuzz: elapsed: 30s, execs: 197189 (6246/sec), new interesting: 38 (total: 265)
+fuzz: elapsed: 30s, execs: 197189 (0/sec), new interesting: 38 (total: 265)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/replay	30.225s
+go test ./internal/eval -run='^$' -fuzz=FuzzDecode -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/11 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 11/11 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 2392 (797/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 6s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 9s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 12s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 15s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 18s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 21s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 24s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 27s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 30s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+fuzz: elapsed: 31s, execs: 2392 (0/sec), new interesting: 25 (total: 36)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/eval	31.057s
+go test ./internal/detect/pasted -run='^$' -fuzz=FuzzScan -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/72 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 72/72 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 10169 (3389/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 6s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 9s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 12s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 15s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 18s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 21s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 24s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 27s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 30s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+fuzz: elapsed: 31s, execs: 10169 (0/sec), new interesting: 11 (total: 83)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/pasted	31.149s
+go test ./internal/detect/hidden -run='^$' -fuzz=FuzzScan -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/92 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 92/92 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 9672 (3224/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 6s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 9s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 12s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 15s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 18s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 21s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 24s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 27s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 30s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+fuzz: elapsed: 31s, execs: 9672 (0/sec), new interesting: 7 (total: 99)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/hidden	31.182s
+go test ./internal/detect/decoderun -run='^$' -fuzz=FuzzAnalyze -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/148 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 148/148 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 23153 (7716/sec), new interesting: 64 (total: 212)
+fuzz: elapsed: 6s, execs: 32613 (3152/sec), new interesting: 83 (total: 231)
+fuzz: elapsed: 9s, execs: 32613 (0/sec), new interesting: 83 (total: 231)
+fuzz: elapsed: 12s, execs: 32613 (0/sec), new interesting: 83 (total: 231)
+fuzz: elapsed: 15s, execs: 32613 (0/sec), new interesting: 83 (total: 231)
+fuzz: elapsed: 18s, execs: 32613 (0/sec), new interesting: 83 (total: 231)
+fuzz: elapsed: 21s, execs: 32613 (0/sec), new interesting: 83 (total: 231)
+fuzz: elapsed: 24s, execs: 32613 (0/sec), new interesting: 83 (total: 231)
+fuzz: elapsed: 27s, execs: 32613 (0/sec), new interesting: 83 (total: 231)
+fuzz: elapsed: 30s, execs: 32613 (0/sec), new interesting: 83 (total: 231)
+fuzz: elapsed: 31s, execs: 32613 (0/sec), new interesting: 83 (total: 231)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/detect/decoderun	31.302s
+go test ./internal/policy -run='^$' -fuzz=FuzzPolicy -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/195 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 195/195 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 15231 (5075/sec), new interesting: 27 (total: 222)
+fuzz: elapsed: 6s, execs: 21562 (2110/sec), new interesting: 34 (total: 229)
+fuzz: elapsed: 9s, execs: 21562 (0/sec), new interesting: 34 (total: 229)
+fuzz: elapsed: 12s, execs: 21562 (0/sec), new interesting: 34 (total: 229)
+fuzz: elapsed: 15s, execs: 21562 (0/sec), new interesting: 34 (total: 229)
+fuzz: elapsed: 18s, execs: 21562 (0/sec), new interesting: 34 (total: 229)
+fuzz: elapsed: 21s, execs: 21562 (0/sec), new interesting: 34 (total: 229)
+fuzz: elapsed: 24s, execs: 21562 (0/sec), new interesting: 34 (total: 229)
+fuzz: elapsed: 27s, execs: 21562 (0/sec), new interesting: 34 (total: 229)
+fuzz: elapsed: 30s, execs: 21562 (0/sec), new interesting: 34 (total: 229)
+fuzz: elapsed: 31s, execs: 21562 (0/sec), new interesting: 34 (total: 229)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/policy	31.202s
+go test ./internal/shellparse -run='^$' -fuzz=FuzzParse -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/350 completed
+fuzz: elapsed: 1s, gathering baseline coverage: 350/350 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 19856 (6616/sec), new interesting: 20 (total: 370)
+fuzz: elapsed: 6s, execs: 37135 (5762/sec), new interesting: 33 (total: 383)
+fuzz: elapsed: 9s, execs: 50492 (4451/sec), new interesting: 38 (total: 388)
+fuzz: elapsed: 12s, execs: 50492 (0/sec), new interesting: 38 (total: 388)
+fuzz: elapsed: 15s, execs: 50492 (0/sec), new interesting: 38 (total: 388)
+fuzz: elapsed: 18s, execs: 50492 (0/sec), new interesting: 38 (total: 388)
+fuzz: elapsed: 21s, execs: 50492 (0/sec), new interesting: 38 (total: 388)
+fuzz: elapsed: 24s, execs: 50492 (0/sec), new interesting: 38 (total: 388)
+fuzz: elapsed: 27s, execs: 50492 (0/sec), new interesting: 38 (total: 388)
+fuzz: elapsed: 30s, execs: 50492 (0/sec), new interesting: 38 (total: 388)
+fuzz: elapsed: 31s, execs: 50492 (0/sec), new interesting: 38 (total: 388)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/shellparse	31.352s
+go test ./cmd/taintwatch -run='^$' -fuzz=FuzzDispatcher -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/106 completed
+fuzz: elapsed: 1s, gathering baseline coverage: 106/106 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 12809 (4268/sec), new interesting: 3 (total: 109)
+fuzz: elapsed: 6s, execs: 25378 (4190/sec), new interesting: 6 (total: 112)
+fuzz: elapsed: 9s, execs: 35198 (3273/sec), new interesting: 8 (total: 114)
+fuzz: elapsed: 12s, execs: 82101 (15632/sec), new interesting: 17 (total: 123)
+fuzz: elapsed: 15s, execs: 101728 (6544/sec), new interesting: 20 (total: 126)
+fuzz: elapsed: 18s, execs: 121025 (6432/sec), new interesting: 21 (total: 127)
+fuzz: elapsed: 21s, execs: 143412 (7462/sec), new interesting: 29 (total: 135)
+fuzz: elapsed: 24s, execs: 166720 (7769/sec), new interesting: 32 (total: 138)
+fuzz: elapsed: 27s, execs: 189989 (7756/sec), new interesting: 34 (total: 140)
+fuzz: elapsed: 30s, execs: 211596 (7204/sec), new interesting: 38 (total: 144)
+fuzz: elapsed: 30s, execs: 211596 (0/sec), new interesting: 38 (total: 144)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/cmd/taintwatch	30.230s
+go test ./internal/hookio -run='^$' -fuzz=FuzzDecoder -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/73 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 73/73 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 10186 (3394/sec), new interesting: 2 (total: 75)
+fuzz: elapsed: 6s, execs: 43192 (11003/sec), new interesting: 28 (total: 101)
+fuzz: elapsed: 9s, execs: 70884 (9231/sec), new interesting: 73 (total: 146)
+fuzz: elapsed: 12s, execs: 72489 (535/sec), new interesting: 75 (total: 148)
+fuzz: elapsed: 15s, execs: 72489 (0/sec), new interesting: 75 (total: 148)
+fuzz: elapsed: 18s, execs: 72489 (0/sec), new interesting: 75 (total: 148)
+fuzz: elapsed: 21s, execs: 72489 (0/sec), new interesting: 75 (total: 148)
+fuzz: elapsed: 24s, execs: 72489 (0/sec), new interesting: 75 (total: 148)
+fuzz: elapsed: 27s, execs: 72489 (0/sec), new interesting: 75 (total: 148)
+fuzz: elapsed: 30s, execs: 72489 (0/sec), new interesting: 75 (total: 148)
+fuzz: elapsed: 31s, execs: 72489 (0/sec), new interesting: 75 (total: 148)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/hookio	31.095s
+go test ./internal/state -run='^$' -fuzz=FuzzSessionState -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/289 completed
+fuzz: elapsed: 1s, gathering baseline coverage: 289/289 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 19307 (6435/sec), new interesting: 4 (total: 293)
+fuzz: elapsed: 6s, execs: 49779 (10155/sec), new interesting: 9 (total: 298)
+fuzz: elapsed: 9s, execs: 79040 (9754/sec), new interesting: 13 (total: 302)
+fuzz: elapsed: 12s, execs: 110059 (10339/sec), new interesting: 21 (total: 310)
+fuzz: elapsed: 15s, execs: 136670 (8870/sec), new interesting: 27 (total: 316)
+fuzz: elapsed: 18s, execs: 168382 (10572/sec), new interesting: 33 (total: 322)
+fuzz: elapsed: 21s, execs: 193541 (8388/sec), new interesting: 37 (total: 326)
+fuzz: elapsed: 24s, execs: 230789 (12413/sec), new interesting: 55 (total: 344)
+fuzz: elapsed: 27s, execs: 264609 (11273/sec), new interesting: 63 (total: 352)
+fuzz: elapsed: 30s, execs: 294863 (10085/sec), new interesting: 66 (total: 355)
+fuzz: elapsed: 30s, execs: 294863 (0/sec), new interesting: 66 (total: 355)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/state	30.365s
+go test ./internal/state -run='^$' -fuzz=FuzzSanitizeSessionID -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/32 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 32/32 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 26534 (8842/sec), new interesting: 1 (total: 33)
+fuzz: elapsed: 6s, execs: 55512 (9660/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 9s, execs: 85084 (9856/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 12s, execs: 117305 (10742/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 15s, execs: 146463 (9719/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 18s, execs: 177428 (10324/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 21s, execs: 209676 (10746/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 24s, execs: 235520 (8616/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 27s, execs: 261013 (8496/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 30s, execs: 294141 (11044/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 30s, execs: 294141 (0/sec), new interesting: 2 (total: 34)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/state	30.159s
+go test ./internal/taint -run='^$' -fuzz=FuzzCommandWords -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/201 completed
+fuzz: elapsed: 1s, gathering baseline coverage: 201/201 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 4056 (1351/sec), new interesting: 10 (total: 211)
+fuzz: elapsed: 6s, execs: 13338 (3097/sec), new interesting: 11 (total: 212)
+fuzz: elapsed: 9s, execs: 56297 (14316/sec), new interesting: 32 (total: 233)
+fuzz: elapsed: 12s, execs: 82419 (8709/sec), new interesting: 57 (total: 258)
+fuzz: elapsed: 15s, execs: 94744 (4107/sec), new interesting: 82 (total: 283)
+fuzz: elapsed: 18s, execs: 109257 (4838/sec), new interesting: 96 (total: 297)
+fuzz: elapsed: 21s, execs: 121567 (4104/sec), new interesting: 102 (total: 303)
+fuzz: elapsed: 24s, execs: 121567 (0/sec), new interesting: 102 (total: 303)
+fuzz: elapsed: 27s, execs: 121567 (0/sec), new interesting: 102 (total: 303)
+fuzz: elapsed: 30s, execs: 121567 (0/sec), new interesting: 102 (total: 303)
+fuzz: elapsed: 31s, execs: 121567 (0/sec), new interesting: 102 (total: 303)
+PASS
+ok  	github.com/ratuhin1122/taintwatch/internal/taint	31.239s
+EXIT=0

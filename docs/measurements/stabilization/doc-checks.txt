@@ -1,0 +1,3 @@
+PASS: 78 changed-document local links exist with exact filename case.
+PASS: binary prerequisite order, security TODO, scanner version and generated eval results.
+External link freshness and a live Claude install were not revalidated by this check.

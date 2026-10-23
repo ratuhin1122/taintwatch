@@ -1,0 +1,16 @@
+fuzz: elapsed: 0s, gathering baseline coverage: 0/2 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 2/2 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 15955 (5318/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 6s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 9s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 12s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 15s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 18s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 21s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 24s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 27s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 30s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+fuzz: elapsed: 31s, execs: 15955 (0/sec), new interesting: 59 (total: 61)
+PASS
+ok  	taintwatch-hook-spike	31.036s
+EXIT=0
