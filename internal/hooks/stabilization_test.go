@@ -109,3 +109,45 @@ func TestLoadedProjectRegexDeadline(t *testing.T) {
 		t.Fatalf("permission=%s elapsed=%s", out.Result.Permission(), time.Since(start))
 	}
 }
+
+func TestMCPSourceReadIsBenign(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("TAINTWATCH_HOME", t.TempDir())
+	post := Post(context.Background(), strings.NewReader(`{"session_id":"source-read","cwd":"/project","hook_event_name":"PostToolUse","tool_name":"mcp__search__query","tool_input":{"query":"status"},"tool_response":{"content":[{"type":"text","text":"The implementation is in src/main.go."}]}}`), "open", "", nil, nil, Runtime{})
+	if post.Failure != "" {
+		t.Fatal(post.Failure)
+	}
+	pre := Pre(context.Background(), strings.NewReader(`{"session_id":"source-read","cwd":"/project","hook_event_name":"PreToolUse","tool_name":"Read","tool_input":{"file_path":"/project/src/main.go"}}`), "open", nil, Runtime{})
+	if pre.Result.Permission() != "allow" {
+		t.Fatal(pre.Result.Permission())
+	}
+}
+
+func TestDegradedWritePreservesConfiguredRetention(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("TAINTWATCH_HOME", t.TempDir())
+	dir := filepath.Join(home, ".config", "taintwatch")
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "policy.yaml"), []byte("version: 1\nstate:\n  retention_days: 30\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	store, err := state.New(state.Options{Retention: 30 * 24 * time.Hour})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = store.MarkTainted("old", state.TaintEvent{Tool: "WebFetch", Source: state.SourceWeb, Reason: "web source"}); err != nil {
+		t.Fatal(err)
+	}
+	old := time.Now().Add(-8 * 24 * time.Hour)
+	if err := os.Chtimes(filepath.Join(store.Home(), "sessions", "old.json"), old, old); err != nil {
+		t.Fatal(err)
+	}
+	Post(context.Background(), strings.NewReader(`{"session_id":"new",`), "open", "", nil, nil, Runtime{})
+	s, err := store.Load("old")
+	if err != nil || !s.Tainted {
+		t.Fatalf("error recovery expired retained taint: %+v %v", s, err)
+	}
+}

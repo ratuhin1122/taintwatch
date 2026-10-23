@@ -12,7 +12,7 @@ func TestEvalValidateCLI(t *testing.T) {
 	home := filepath.Join(t.TempDir(), "no-state")
 	t.Setenv("TAINTWATCH_HOME", home)
 	var out, errout bytes.Buffer
-	if code := run([]string{"eval", "validate", "../../eval/corpus"}, strings.NewReader(""), &out, &errout); code != 0 || errout.Len() != 0 || !strings.Contains(out.String(), "63 scenarios (33 attacks, 30 benign)") || !strings.Contains(out.String(), "Validation only") {
+	if code := run([]string{"eval", "validate", "../../eval/corpus"}, strings.NewReader(""), &out, &errout); code != 0 || errout.Len() != 0 || !strings.Contains(out.String(), "74 scenarios (35 attacks, 39 benign)") || !strings.Contains(out.String(), "Validation only") {
 		t.Fatal(code, out.String(), errout.String())
 	}
 	if _, err := os.Stat(home); !os.IsNotExist(err) {

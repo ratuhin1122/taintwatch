@@ -31,10 +31,17 @@ func Render(w io.Writer, h audit.History, asJSON bool) error {
 		return json.NewEncoder(w).Encode(h)
 	}
 	if h.Session == "" {
+		if h.Degraded {
+			_, e := fmt.Fprintf(w, "Degraded: yes (%s)\nNo recorded decisions yet.\n", text(h.DegradedReason))
+			return e
+		}
 		_, e := fmt.Fprintln(w, "No recorded decisions yet.")
 		return e
 	}
 	var b strings.Builder
+	if h.Degraded {
+		fmt.Fprintf(&b, "Degraded: yes (%s)\n", text(h.DegradedReason))
+	}
 	fmt.Fprintf(&b, "Session %s — %d recent decision(s)\n", text(h.Session), len(h.Records))
 	if len(h.Records) == 0 {
 		fmt.Fprintln(&b, "No retained decisions for this session.")

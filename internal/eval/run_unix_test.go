@@ -51,9 +51,8 @@ func TestRunCorpusDeterministicAndIsolated(t *testing.T) {
 			t.Fatal("sandbox path leaked")
 		}
 	}
-	// TW009 also asks on a benign MCP-supplied source path. Keep the authored
-	// allow label and the failing gate visible; do not relabel friction as benign.
-	if a.Attacks.Total != 32 || a.Attacks.Caught != 32 || a.KnownMisses.Total != 1 || a.KnownMisses.Caught != 0 || a.ExpectedFailures != 1 || a.GateFailures != 1 || a.Benign.Sessions != 30 || a.Benign.ToolCalls != 34 || a.Benign.Asks != 1 {
+	// The original benign MCP source-read expectation remains allow.
+	if a.Attacks.Total != 34 || a.Attacks.Caught != 34 || a.KnownMisses.Total != 1 || a.KnownMisses.Caught != 0 || a.ExpectedFailures != 1 || a.GateFailures != 0 || a.Benign.Sessions != 39 || a.Benign.ToolCalls != 43 || a.Benign.Asks != 0 {
 		t.Fatalf("unexpected corpus outcomes %+v %+v %+v", a.Attacks, a.KnownMisses, a.Benign)
 	}
 	if a.Scenarios[0].Actions[0].Decision != "allow" || a.Scenarios[0].Actions[1].Decision != "ask" {

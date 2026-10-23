@@ -57,13 +57,37 @@ func runInspect(name string, args []string, out, errOut io.Writer) int {
 		return exitFailure
 	}
 	if name == "explain" {
+		global, err := store.Load(state.ObservationLossSession)
+		if err != nil {
+			fmt.Fprintln(errOut, "taintwatch explain: observation state unavailable")
+			return exitFailure
+		}
+		h.Degraded, h.DegradedReason = global.Degraded, global.DegradedReason
+		key := h.Session
+		if *sessionID != "" {
+			key = state.SanitizeSessionID(*sessionID)
+		}
+		if key != "" {
+			current, found, err := store.LoadKey(key)
+			if err != nil {
+				fmt.Fprintln(errOut, "taintwatch explain: session state unavailable")
+				return exitFailure
+			}
+			if found && current.Degraded {
+				h.Degraded = true
+				h.DegradedReason = current.DegradedReason
+			}
+		}
 		e = explain.Render(out, h, asJSON)
 	} else {
 		var current state.Session
 		known := false
 		if *sessionID != "" {
-			current, e = store.Load(*sessionID)
-			known = e == nil
+			current, known, e = store.LoadKey(state.SanitizeSessionID(*sessionID))
+			if e == nil && !known {
+				fmt.Fprintln(out, "session not found")
+				return exitOK
+			}
 		} else if h.Session != "" {
 			current, known, e = store.LoadKey(h.Session)
 		} else {
@@ -75,6 +99,15 @@ func runInspect(name string, args []string, out, errOut io.Writer) int {
 		if e != nil {
 			fmt.Fprintln(errOut, "taintwatch status: could not read session state")
 			return exitFailure
+		}
+		global, globalErr := store.Load(state.ObservationLossSession)
+		if globalErr != nil {
+			fmt.Fprintln(errOut, "taintwatch status: observation state unavailable")
+			return exitFailure
+		}
+		if global.Degraded {
+			current.Degraded = true
+			current.DegradedReason = global.DegradedReason
 		}
 		e = explain.StatusWithPolicy(out, current, known, h, loaded.Files)
 	}

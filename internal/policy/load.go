@@ -19,10 +19,11 @@ type Ignored struct {
 	Reason string `yaml:"reason"`
 }
 type Effective struct {
-	Config  Config
-	Origins map[string]string
-	Files   []string
-	Ignored []Ignored
+	compiled map[string]*regexp.Regexp
+	Config   Config
+	Origins  map[string]string
+	Files    []string
+	Ignored  []Ignored
 }
 type Options struct {
 	CWD, UserHome, UserFile, ProjectFile string
@@ -50,6 +51,7 @@ func LoadStandalone(file string) (Effective, error) {
 		return e, err
 	}
 	e.Files = append(e.Files, absolute)
+	e.compiled = doc.compiled
 	for _, ch := range doc.changes {
 		e.apply(ch, fmt.Sprintf("%s:%d", absolute, ch.node.Line), false)
 	}
@@ -163,6 +165,12 @@ func (e *Effective) readLayer(file string, project bool) error {
 		return err
 	}
 	e.Files = append(e.Files, absolute)
+	if e.compiled == nil {
+		e.compiled = map[string]*regexp.Regexp{}
+	}
+	for pattern, re := range d.compiled {
+		e.compiled[pattern] = re
+	}
 	for _, ch := range d.changes {
 		e.apply(ch, fmt.Sprintf("%s:%d", absolute, ch.node.Line), project)
 	}
@@ -356,8 +364,8 @@ func (e *Effective) setList(k string, v []string) {
 		r.ExtraMatch = v
 		r.Compiled = nil
 		for _, pattern := range v {
-			re, err := regexp.Compile(pattern)
-			if err == nil {
+			re := e.compiled[pattern]
+			if re != nil {
 				r.Compiled = append(r.Compiled, re)
 			}
 		}

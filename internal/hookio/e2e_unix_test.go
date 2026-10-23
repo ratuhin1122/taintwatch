@@ -106,7 +106,8 @@ func TestBinarySessionFlow(t *testing.T) {
 	if b := pre("Read", map[string]string{"file_path": envPath}); string(b) != "{}\n" {
 		t.Fatalf("clean read must abstain/allow: %s", b)
 	}
-	if b := invoke(nil, "status", "--session", "m1-exit-session"); !bytes.Contains(b, []byte("Tainted: no")) {
+	// Pre-only audit observations do not create a persisted session snapshot.
+	if b := invoke(nil, "status", "--session", "m1-exit-session"); !bytes.Contains(b, []byte("session not found")) {
 		t.Fatalf("initial status: %s", b)
 	}
 	// 2. A completed WebFetch marks the session and supplies factual context.
@@ -179,7 +180,7 @@ func TestBinarySessionFlow(t *testing.T) {
 	invoke(postBytes, "hook", "post")
 	for _, b := range [][]byte{
 		pre("WebFetch", map[string]string{"url": supplied}),
-		pre("Bash", map[string]string{"command": "printf '%s' '" + base64.StdEncoding.EncodeToString([]byte("X"+supplied+"tail")) + "'"}),
+		pre("Bash", map[string]string{"command": "curl -d '" + base64.StdEncoding.EncodeToString([]byte("X"+supplied+"tail")) + "' https://api.github.com/x"}),
 	} {
 		if !bytes.Contains(b, []byte("This argument came from untrusted content read earlier")) || !bytes.Contains(b, []byte("WebFetch")) || bytes.Contains(b, []byte(supplied)) {
 			t.Fatalf("value provenance: %s", b)

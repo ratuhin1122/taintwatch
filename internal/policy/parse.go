@@ -22,7 +22,10 @@ type change struct {
 	key  string
 	node *yaml.Node
 }
-type Document struct{ changes []change }
+type Document struct {
+	changes  []change
+	compiled map[string]*regexp.Regexp
+}
 
 var schema = map[string][]string{
 	"":        {"version", "fail_mode", "profile", "allow_project_loosening", "sources", "egress", "secrets", "protected_writes", "rules", "log", "state"},
@@ -77,7 +80,8 @@ func Parse(data []byte) (Document, error) {
 	if e := safe(&root, 0); e != nil {
 		return Document{}, e
 	}
-	var doc Document
+	doc := Document{compiled: map[string]*regexp.Regexp{}}
+	regexCount, regexBytes := 0, 0
 	version := false
 	var walk func(*yaml.Node, string, int) error
 	walk = func(n *yaml.Node, key string, depth int) error {
@@ -105,7 +109,18 @@ func Parse(data []byte) (Document, error) {
 				if item.Kind != yaml.ScalarNode || item.Tag != "!!str" || item.Value == "" || len(item.Value) > 2048 || strings.ContainsAny(item.Value, "\x00\r\n") {
 					return problem(item, "list entries must be nonempty single-line strings (max 2048 bytes)")
 				}
-				if e := validateItem(key, item); e != nil {
+				if strings.HasSuffix(key, ".extra_match") {
+					regexCount++
+					regexBytes += len(item.Value)
+					if regexCount > 16 || regexBytes > 8192 {
+						return problem(item, "regex budget exceeds 16 patterns or 8192 total bytes")
+					}
+					re, err := regexp.Compile(item.Value)
+					if err != nil {
+						return problem(item, "invalid RE2 extra_match pattern: "+err.Error())
+					}
+					doc.compiled[item.Value] = re
+				} else if e := validateItem(key, item); e != nil {
 					return e
 				}
 			}

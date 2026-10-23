@@ -61,6 +61,16 @@ func TestLayeringAndOrigins(t *testing.T) {
 	}
 }
 
+func TestRegexDocumentBudget(t *testing.T) {
+	body := "version: 1\nrules:\n  TW006:\n    extra_match:\n      append:\n"
+	for i := 1; i <= 17; i++ {
+		body += "        - '" + strings.Repeat("a", i) + "'\n"
+	}
+	if _, err := Parse([]byte(body)); err == nil {
+		t.Fatal("unbounded regex count accepted")
+	}
+}
+
 func TestHostileProjectCannotLoosen(t *testing.T) {
 	opts, user, project := setup(t)
 	put(t, user, "version: 1\nfail_mode: closed\nprofile: paranoid\negress:\n  allow_domains:\n    replace: [safe.example]\nsources:\n  mcp:\n    trusted_servers:\n      replace: [trusted]\nrules:\n  TW001:\n    action: deny\n")

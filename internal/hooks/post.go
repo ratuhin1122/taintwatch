@@ -3,11 +3,13 @@ package hooks
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/ratuhin1122/taintwatch/internal/audit"
 	"github.com/ratuhin1122/taintwatch/internal/detect/encoded"
 	"github.com/ratuhin1122/taintwatch/internal/detect/hidden"
 	"github.com/ratuhin1122/taintwatch/internal/hookio"
+	"github.com/ratuhin1122/taintwatch/internal/policy"
 	"github.com/ratuhin1122/taintwatch/internal/shellparse"
 	"github.com/ratuhin1122/taintwatch/internal/state"
 	"github.com/ratuhin1122/taintwatch/internal/taint"
@@ -19,6 +21,9 @@ func Post(ctx context.Context, stdin io.Reader, override, profile string, observ
 	rt = rt.defaults()
 	completed := false
 	id := ""
+	persistHome, _ := state.DefaultHome()
+	persistConfig := policy.Defaults()
+	persistConfig.State.RetentionDays = 36500 // Unknown policy: preserve recent state.
 	failureMode := "open"
 	if override != "" {
 		failureMode = override
@@ -28,7 +33,7 @@ func Post(ctx context.Context, stdin io.Reader, override, profile string, observ
 			out = postFailure(failureMode, "internal panic")
 		}
 		if !completed {
-			store, err := state.New(state.Options{})
+			store, err := state.New(state.Options{Home: persistHome, Retention: time.Duration(persistConfig.State.RetentionDays) * 24 * time.Hour, AuditPath: persistConfig.Log.Path, AuditMaxBytes: persistConfig.Log.Rotation.MaxBytes, AuditKeep: persistConfig.Log.Rotation.Keep})
 			if err == nil {
 				reason := "post observation lost: " + out.Failure
 				_, err = store.MarkDegraded(id, reason)
@@ -45,6 +50,7 @@ func Post(ctx context.Context, stdin io.Reader, override, profile string, observ
 		observe(override)
 	}
 	boot, _ := rt.Bootstrap()
+	persistConfig = boot.Config
 	mode := boot.Config.FailMode
 	failureMode = mode
 	if override != "" {
@@ -60,6 +66,7 @@ func Post(ctx context.Context, stdin io.Reader, override, profile string, observ
 		return postFailure(mode, "input decoding")
 	}
 	loaded, policyErr := rt.LoadPolicy(input.CWD, override, profile)
+	persistConfig = loaded.Config
 	mode = loaded.Config.FailMode
 	failureMode = mode
 	if observe != nil {
@@ -157,7 +164,7 @@ func Post(ctx context.Context, stdin io.Reader, override, profile string, observ
 		}
 		return o
 	}
-	completed = true
+	completed = policyErr == nil && !parseFailed
 	if m.Tainted {
 		return Outcome{Result: hookio.AdditionalContext(m.Context()), Failure: warning}
 	}

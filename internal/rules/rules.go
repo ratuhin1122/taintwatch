@@ -72,24 +72,32 @@ var defaults = []Rule{
 // Defaults returns a copy so callers cannot mutate the built-in table.
 func Defaults() []Rule { return append([]Rule(nil), defaults...) }
 func Evaluate(in Input) Decision {
-	d, _ := evaluate(in, false)
+	d, _ := evaluate(in, false, true)
 	return d
 }
 
 // EvaluateTraced records every matching rule, including disabled rules, without
 // retaining commands, paths, URLs, response contents, or predicate evidence.
-func EvaluateTraced(in Input) (Decision, Snapshot) { return evaluate(in, true) }
+func EvaluateTraced(in Input) (Decision, Snapshot) { return evaluate(in, true, true) }
 
-func evaluate(in Input, capture bool) (Decision, Snapshot) {
+// EvaluateEssential excludes supplemental regex until session state is known.
+func EvaluateEssential(in Input) Decision { d, _ := evaluate(in, false, false); return d }
+
+func evaluate(in Input, capture, extras bool) (Decision, Snapshot) {
 	snapshot := Snapshot{Version: matchSchemaVersion, Matches: []string{}}
 	chosen := Decision{Action: Allow, RuleID: "default.allow", Reason: "No applicable built-in risk rule matched."}
 	matched := false
+	chosenIndex := len(defaults)
+	seenMatches := map[string]bool{}
 	valueReason := ""
 	rank := map[Action]int{Allow: 0, Ask: 1, Deny: 2}
 	// Complete essential predicates before considering repository-supplied regex.
 	for pass := 0; pass < 2; pass++ {
+		if pass == 1 && !extras {
+			break
+		}
 		budget := 16
-		for _, r := range defaults {
+		for index, r := range defaults {
 			override, hasOverride := in.Policy.Overrides[r.ID]
 			enabled := !hasOverride || override.Enabled
 			if !capture && !enabled {
@@ -109,14 +117,15 @@ func evaluate(in Input, capture bool) (Decision, Snapshot) {
 				facts := []string{in.Tool, in.Command, in.FilePath, in.URL}
 				for _, pattern := range override.Compiled {
 					if budget == 0 {
+						snapshot.Version = 0 // incomplete match facts cannot be replayed
 						e = []string{"configured regex budget exhausted"}
 						r.Action = Ask
 						break
 					}
 					budget--
 					for _, v := range facts {
-						if len(v) > 256 {
-							v = v[:256]
+						if len(v) > 64 {
+							v = v[:64]
 						}
 						if v != "" {
 							if pattern.MatchString(v) {
@@ -131,8 +140,9 @@ func evaluate(in Input, capture bool) (Decision, Snapshot) {
 				}
 			}
 			if len(e) > 0 {
-				if capture {
+				if capture && !seenMatches[r.ID] {
 					snapshot.Matches = append(snapshot.Matches, r.ID)
+					seenMatches[r.ID] = true
 				}
 				if !enabled {
 					continue
@@ -156,8 +166,9 @@ func evaluate(in Input, capture bool) (Decision, Snapshot) {
 					}
 					reason = "Session is tainted because " + cause + "; " + reason
 				}
-				if !matched || rank[r.Action] > rank[chosen.Action] {
+				if !matched || rank[r.Action] > rank[chosen.Action] || rank[r.Action] == rank[chosen.Action] && index < chosenIndex {
 					chosen = Decision{r.Action, r.ID, reason, e}
+					chosenIndex = index
 					matched = true
 				}
 			}
@@ -411,7 +422,7 @@ func destructive(in Input) []string {
 		}
 		bad = bad || strings.HasPrefix(c.Name, "mkfs")
 		upper := strings.ToUpper(strings.Join(strings.Fields(a), " "))
-		bad = bad || strings.Contains(upper, "DROP TABLE") || strings.Contains(upper, "DROP DATABASE")
+		bad = bad || contains(c.Name, "psql", "mysql", "mariadb", "sqlite3", "sqlcmd") && (strings.Contains(upper, "DROP TABLE") || strings.Contains(upper, "DROP DATABASE"))
 		if bad {
 			return []string{"destructive " + c.Name + " operation"}
 		}

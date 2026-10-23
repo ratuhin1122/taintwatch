@@ -11,7 +11,7 @@ import (
 
 // Increment when matcher/trace semantics change so old facts are not silently
 // interpreted as results of a different matching implementation.
-const matchSchemaVersion = 2
+const matchSchemaVersion = 3
 
 // Snapshot is a complete predicate-match vector for frozen historical state.
 // Only IDs and a configuration digest are retained, never raw predicate inputs.

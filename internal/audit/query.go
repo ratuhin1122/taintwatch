@@ -15,9 +15,11 @@ type Source interface {
 
 // History contains recent decisions and ask counts across retained files only.
 type History struct {
-	Session string   `json:"session"`
-	Records []Record `json:"records"`
-	Asks    int      `json:"asks_retained"`
+	Degraded       bool     `json:"degraded,omitempty"`
+	DegradedReason string   `json:"degraded_reason,omitempty"`
+	Session        string   `json:"session"`
+	Records        []Record `json:"records"`
+	Asks           int      `json:"asks_retained"`
 }
 
 // Query defaults to the session with the latest audit timestamp. Explicit IDs

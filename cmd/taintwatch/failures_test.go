@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"strings"
@@ -109,12 +110,24 @@ func TestDeadlineModes(t *testing.T) {
 				var out, errOut bytes.Buffer
 				start := time.Now()
 				var code int
-				if post {
-					code = runPostWithin([]string{"--fail-mode", mode}, blockedPostReader{release, returned}, &out, &errOut, 250*time.Millisecond)
-				} else {
-					code = runPreWithin([]string{"--fail-mode", mode}, blockedPostReader{release, returned}, &out, &errOut, 250*time.Millisecond)
-				}
+				workerDone := make(chan struct{})
+				args := []string{"--fail-mode", mode}
+				code = guardedHook(args, blockedPostReader{release, returned}, &out, &errOut, 250*time.Millisecond, post, func(ctx context.Context, r io.Reader, observe func(string)) postOutcome {
+					defer close(workerDone)
+					if post {
+						return postWork(ctx, args, r, observe)
+					}
+					return preWork(ctx, args, r, observe)
+				})
 				close(release)
+				// The production process exits after returning its decision. This
+				// in-process test must join the released reader worker before its
+				// temporary HOME is removed, including deferred degraded writes.
+				select {
+				case <-workerDone:
+				case <-time.After(time.Second):
+					t.Fatal("released hook worker did not finish")
+				}
 				// A cancelled context may skip the underlying Read altogether.
 				if code != 0 || time.Since(start) > time.Second || !strings.Contains(errOut.String(), "deadline") {
 					t.Fatal(code, out.String(), errOut.String())

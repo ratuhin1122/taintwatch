@@ -72,7 +72,7 @@ func guardedHook(args []string, in io.Reader, out, errOut io.Writer, timeout tim
 	}
 	failure := func(stage string) postOutcome {
 		if post {
-			if store, err := state.New(state.Options{}); err == nil {
+			if store, err := state.New(state.Options{Retention: 100 * 365 * 24 * time.Hour}); err == nil {
 				_, _ = store.MarkDegraded("", "post observation lost: "+stage)
 			}
 			return postFailure(mode(), stage)

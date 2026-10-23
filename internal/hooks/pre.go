@@ -56,7 +56,7 @@ func Pre(ctx context.Context, reader io.Reader, override string, observe func(st
 	if in.ToolName == "Bash" && argsErr == nil {
 		input.Shell = shellparse.Parse(args.Command)
 	}
-	known := rules.Evaluate(input)
+	known := rules.EvaluateEssential(input)
 	store, err := rt.Store(loaded.Config)
 	if err != nil {
 		return preFailureKnown(mode, "state initialization", known)
@@ -138,7 +138,7 @@ func Pre(ctx context.Context, reader io.Reader, override string, observe func(st
 	record.Evidence = d.Evidence
 	// Successful decisions retain only complete redacted match facts. Error and
 	// incomplete-policy records cannot be promoted into replayable observations.
-	if policyErr == nil && !session.Degraded {
+	if policyErr == nil && !session.Degraded && snapshot.Version > 0 {
 		record.Replay = &snapshot
 	}
 	if err := audit.Write(store, record); err != nil {

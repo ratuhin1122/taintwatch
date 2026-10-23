@@ -3,6 +3,7 @@ package shellparse
 import (
 	"bytes"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -12,9 +13,10 @@ import (
 
 // Command is a literal approximation; Dynamic means expansions remain unresolved.
 type Command struct {
-	Name    string
-	Args    []string
-	Dynamic bool
+	Executable string
+	Name       string
+	Args       []string
+	Dynamic    bool
 }
 type Redirect struct {
 	Operator, Path, Heredoc string
@@ -61,6 +63,11 @@ func parse(source string, depth int) (r Result) {
 	syntax.Walk(f, func(n syntax.Node) bool {
 		switch v := n.(type) {
 		case *syntax.CallExpr:
+			for _, a := range v.Assigns {
+				if a.Name != nil && a.Name.Value == "CLAUDE_PLUGIN_ROOT" {
+					r.Uncertain = true
+				}
+			}
 			if len(v.Args) == 0 {
 				return true
 			}
@@ -68,6 +75,18 @@ func parse(source string, depth int) (r Result) {
 			dynamic := false
 			for i, w := range v.Args {
 				s, ok := literal(w)
+				if !ok && i == 1 && len(v.Args) >= 3 && len(v.Assigns) == 0 {
+					name, _ := literal(v.Args[0])
+					sub, _ := literal(v.Args[2])
+					if containsName(path.Base(name), "sh", "bash", "dash", "zsh") && containsName(sub, "status", "explain", "version", "doctor") {
+						var b bytes.Buffer
+						_ = syntax.NewPrinter().Print(&b, w)
+						if b.String() == `"${CLAUDE_PLUGIN_ROOT}/bin/taintwatch-launcher"` && os.Getenv("CLAUDE_PLUGIN_ROOT") != "" {
+							s = os.Getenv("CLAUDE_PLUGIN_ROOT") + "/bin/taintwatch-launcher"
+							ok = true
+						}
+					}
+				}
 				ok = ok && !unresolvedGlob(w)
 				words[i] = s
 				dynamic = dynamic || !ok
@@ -85,7 +104,12 @@ func parse(source string, depth int) (r Result) {
 				r.Uncertain = true
 				return true
 			}
-			c := Command{Name: path.Base(words[0]), Args: words[1:], Dynamic: dynamic}
+			c := Command{Name: path.Base(words[0]), Args: words[1:], Dynamic: dynamic, Executable: words[0]}
+			for _, a := range c.Args {
+				if strings.HasPrefix(a, "CLAUDE_PLUGIN_ROOT=") {
+					r.Uncertain = true
+				}
+			}
 			r.Commands = append(r.Commands, c)
 			r.Uncertain = r.Uncertain || dynamic
 			r.extract(c)
@@ -105,7 +129,7 @@ func parse(source string, depth int) (r Result) {
 						break
 					}
 				}
-				if !found {
+				if !found && !readOnlyLauncher(c) {
 					r.Uncertain = true
 				}
 			}
@@ -449,9 +473,12 @@ func (r *Result) extract(c Command) {
 	switch c.Name {
 	case "curl", "wget", "nc", "ncat", "socat", "ssh", "scp", "rsync", "ftp":
 		network = true
+		if len(c.Args) == 1 && containsName(c.Args[0], "--version", "--help") {
+			network = false
+		}
 	case "git":
 		for _, a := range c.Args {
-			if a == "push" || a == "fetch" || a == "clone" || a == "pull" || a == "remote" {
+			if a == "push" || a == "fetch" || a == "clone" || a == "pull" {
 				network = true
 			}
 		}
@@ -493,6 +520,9 @@ func (r *Result) extract(c Command) {
 				hosts = append(hosts, h)
 			}
 		} else if network && !strings.HasPrefix(candidate, "-") {
+			if _, err := strconv.Atoi(candidate); err == nil {
+				continue
+			}
 			if c.Name == "ssh" || c.Name == "scp" || c.Name == "rsync" || c.Name == "nc" || c.Name == "ncat" || c.Name == "ftp" || c.Name == "socat" || strings.Contains(candidate, "@") {
 				if h := Host(candidate); h != "" {
 					hosts = append(hosts, h)
@@ -521,7 +551,32 @@ func (r *Result) extract(c Command) {
 	}
 	// Literal operands are candidates, not a claim about actual filesystem access.
 	switch c.Name {
-	case "cat", "head", "tail", "less", "more", "grep", "rg", "sed", "awk", "cp", "mv", "tar", "source", ".", "base64", "xxd":
+	case "rg", "grep":
+		pattern := false
+		for i := 0; i < len(c.Args); i++ {
+			a := c.Args[i]
+			if containsName(a, "-e", "--regexp", "-f", "--file") {
+				pattern = true
+				i++
+				if i < len(c.Args) && containsName(a, "-f", "--file") {
+					r.Reads = append(r.Reads, c.Args[i])
+				}
+				continue
+			}
+			if containsName(a, "-g", "--glob", "-t", "--type", "-A", "-B", "-C", "--max-count", "-m") {
+				i++
+				continue
+			}
+			if strings.HasPrefix(a, "-") {
+				continue
+			}
+			if !pattern {
+				pattern = true
+				continue
+			}
+			r.Reads = append(r.Reads, a)
+		}
+	case "cat", "head", "tail", "less", "more", "sed", "awk", "cp", "mv", "tar", "source", ".", "base64", "xxd":
 		for _, a := range c.Args {
 			if !strings.HasPrefix(a, "-") {
 				r.Reads = append(r.Reads, a)
@@ -536,4 +591,8 @@ func (r *Result) extract(c Command) {
 			}
 		}
 	}
+}
+
+func readOnlyLauncher(c Command) bool {
+	return len(c.Args) >= 2 && path.Base(c.Args[0]) == "taintwatch-launcher" && containsName(c.Args[1], "status", "explain", "version", "doctor") && !c.Dynamic
 }
