@@ -9,7 +9,7 @@ original files, or change session state. The candidate is strictly validated and
 applied over built-in defaults only; ambient user/project policies and environment
 overrides are not loaded. Include all relevant custom settings in the candidate.
 Use the policy schema's `replace:` / `append:` list syntax. `policy show` is a
-human-readable reference with origins, not an importable candidate file.
+valid importable YAML with origins in comments. Save it as a candidate and run `policy check` before replaying. Matcher semantics now use snapshot version 3; older snapshots are unreplayable rather than inferred as current matches. Degraded or incomplete evaluation snapshots are not replayable.
 
 The report groups changes by the new winning rule; changes to allow are grouped
 under the previous rule. Each row includes the log line, session, timestamp,

@@ -6,8 +6,8 @@ remain unresolved. A v0.9.0 preview is the recommended next milestone.
 
 ## Release gates
 
-- [ ] Resolve the benign MCP code-read TW009 expectation failure without hiding
-  the friction: decide whether provenance should gate ordinary file reads.
+- [x] Resolve benign MCP code-read friction with unchanged allow expectations;
+  stabilization gates provenance on sensitive reuse and the local eval passes.
 - [ ] Collect sanitized real Read, WebFetch, Bash and MCP PostToolUse captures;
   turn them into golden fixtures and test ask behavior in a real session.
 - [ ] Test a current Claude Code release and record a supported minimum version.
@@ -22,7 +22,7 @@ remain unresolved. A v0.9.0 preview is the recommended next milestone.
   dependency versions recorded; scanner crashes are not passing scans.
 - [ ] Choose whether trusted MCP exceptions must validate provenance as well as
   names before they are advertised for untrusted project configurations.
-- [ ] Finish the reviewed corpus expansion (currently the first 50 scenarios),
+- [ ] Finish the reviewed corpus expansion (currently 74 scenarios including stabilization regressions),
   with original/permissive provenance and honest synthetic-data qualification.
 - [ ] Set a working private SECURITY.md reporting contact; remove placeholders.
 - [ ] Record a real demo GIF and ensure README install commands work from the
@@ -38,12 +38,12 @@ remain unresolved. A v0.9.0 preview is the recommended next milestone.
 
 ## Decisions the maintainer should double-check
 
-1. **v0.9.0 first:** live payload compatibility and the eval gate remain release
+1. **v0.9.0 first:** live payload compatibility and sustained CI evidence remain release
    risks that a preview makes explicit.
 2. **Policy stability:** changing merge/trust/fail semantics after v1.0 can silently
    change users' security expectations. Define migration and compatibility rules.
-3. **Provenance friction:** TW009 protects reused indicators but can interrupt a
-   legitimate MCP-supplied source path. Set an intentional default and tests.
+3. **Provenance scope:** ordinary in-project reads are now allowed; sensitive
+   reuse still asks. Review these intentional defaults and regression tests.
 4. **Privacy boundary:** redaction recognizes patterns, not every possible secret.
    State contains extracted indicators; free-form metadata must stay secret-free.
 5. **Trust and availability:** name-based MCP trust, fail-open defaults, launcher

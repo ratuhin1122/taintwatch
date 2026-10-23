@@ -168,7 +168,9 @@ Taintwatch is defense-in-depth, not a solution to prompt injection. Session-leve
 taint is coarse; content detectors will be telemetry only. Hook-visible reads do
 not cover every way context enters a session (for example direct file mentions).
 
-Spike performance: not yet measured. Real-session compatibility: not yet measured.
+Spike performance: not measured separately. Product hook median/p99 latency was
+measured in the dated [hardening report](HARDENING.md). Real-session compatibility
+remains unmeasured.
 Supported product target: macOS/Linux amd64/arm64; Windows best-effort through WSL.
 
 ## M2.2 packaging verification (2026-10-22)

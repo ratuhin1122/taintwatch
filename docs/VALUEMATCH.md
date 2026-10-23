@@ -32,7 +32,11 @@ Separate arguments are scanned separately; values are not synthesized across
 argument boundaries. Matching is case-sensitive byte-substring search. There is
 no hostname/path boundary claim for a substring match.
 
-A match enables the default ask rule TW009, with the source tool in the reason:
+A match enables TW009 only in a sensitive action: WebFetch, recognized network or
+execution actions, secret access, protected/self writes, destructive/publishing
+actions, uncertain shell analysis, or outside-project path actions. Ordinary
+in-project source reads and printed references do not trigger TW009 by themselves.
+The source tool appears in the reason:
 "This argument came from untrusted content read earlier (WebFetch)". The existing
 deny/ask/allow precedence and rule order still apply. If another ask wins, its
 reason also names the provenance signal. Policy can override TW009 as it can
@@ -46,7 +50,7 @@ signal even on an allowlisted host. This does not establish destination ownershi
 ## Bounds and privacy
 
 - Scan the first 1 MiB of response string data; retain at most 32 unique originals
-  per event, each 4–256 bytes (valid IP literals may be shorter), and at most 32
+  per event, each 4â€“256 bytes (valid IP literals may be shorter), and at most 32
   variants per original.
 - Consider at most the newest 128 taint events and 64 retained indicators per
   pre-hook, with a total pattern budget of 128 KiB. The automaton has at most one
@@ -63,14 +67,13 @@ signal even on an allowlisted host. This does not establish destination ownershi
   retention can remove state. Protect the state directory accordingly.
 - Audit/hook reasons omit matched originals and encodings. Audits retain the rule
   ID, source metadata and existing redacted match snapshot. The replay schema is
-  now version 2; older snapshots cannot silently assume TW009 did not match.
+  now version 3; older snapshots cannot silently assume the current predicates matched.
 
 ## Interpretation
 
 These are exact and enumerated encoded-form matches only. Paraphrased, split or
 otherwise transformed values are not detected. A match means an argument shares
-bytes with an earlier indicator, not that an instruction was followed. A normal
-MCP search result naming a source file can therefore cause a benign confirmation.
-The authored benign allow expectation is retained and reported as friction in
-[EVAL.md](EVAL.md#measured-results); the eval CI gate remains strict and fails for
-that mismatch. Neither labels nor gate semantics are relaxed to hide this cost.
+bytes with an earlier indicator, not that an instruction was followed. Ordinary source reads after MCP search results are covered by regression tests
+and no longer ask solely because the path was supplied. Sensitive reuse still
+asks. Substring collisions and conservative action classification can still
+cause false positives; see [EVAL.md](EVAL.md#measured-results).

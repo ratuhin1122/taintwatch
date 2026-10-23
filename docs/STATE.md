@@ -43,10 +43,10 @@ Each operation takes a session ID and returns a Session plus an error:
   Corrupt, mismatched, oversized, or inconsistent state returns an error.
 - `MarkTainted(id, event)`: sets taint and appends time, tool, source (`web`, `mcp`,
   `bash`, `read`, or configured `tool`), reason, and extracted value strings. Zero event time defaults
-  to now. Values remain available for the future valuematch layer.
+  to now. Bounded values and variants support valuematch.
 - `AddApproval(id, approval)`: appends time, optional tool/rule ID, reason and who.
   Does not clear taint or grant tool permissions itself.
-- `Clear(id, reason, who)`: clears taint, events and approvals. Preserves creation
+- `Clear(id, reason, who)`: clears taint, degraded status/reason, events and approvals. Preserves creation
   time and records the latest clear's reason, who and UTC time in `last_clear`.
 - `Touch(id)`: persists or refreshes a session without changing its taint.
 
@@ -85,7 +85,8 @@ lock, so it cannot race a cooperating process's refresh. Cleanup errors abort th
 pending update; already removed expired files are not restored.
 
 Cleanup scans the directory on every mutation and the store lock serializes
-different sessions. Latency and scaling are not yet measured. Session-level
+different sessions. The dated large-state measurements are in [HARDENING.md](HARDENING.md);
+several paths exceeded the 50 ms median target on that host. Session-level
 taint is coarse defense-in-depth, not a solution to prompt injection. Content
 detectors remain telemetry only and do not independently select blocking.
 

@@ -82,19 +82,9 @@ See [architecture](docs/ARCHITECTURE.md) and the [verified/unverified compatibil
 
 ## Install
 
-### Marketplace
+**Binary prerequisite:** there is currently no published release binary. Build and put Taintwatch on PATH before installing or enabling plugin hooks.
 
-In an interactive Claude Code session, use this repository's actual marketplace name:
-
-```text
-/plugin marketplace add ratuhin1122/taintwatch
-/plugin install taintwatch@ratuhin1122-plugins
-/taintwatch:doctor
-```
-
-The install command opens the plugin panel; complete its installation flow. The equivalent public marketplace CLI registration and install were tested with Claude Code 2.1.175 in an isolated configuration. These forms follow the [official marketplace documentation](https://code.claude.com/docs/en/plugin-marketplaces). **There is currently no release binary to download.** Build the binary first using the source path below and put it on PATH before enabling hooks. Hooks deliberately disable bootstrap downloads. Review plugin source and hook commands before enabling them; marketplace discovery is not a security endorsement. Do not enable both plugin and standalone wiring.
-
-### Source checkout: try a decision first
+### Build the binary first
 
 Requires Linux or macOS, Go 1.22+, Make, Git, and a POSIX shell. From an existing checkout, these commands build, exercise the synthetic decision scenario, and put the binary on your user PATH:
 
@@ -116,6 +106,18 @@ claude plugin validate .
 claude plugin marketplace add ./
 claude plugin install taintwatch@ratuhin1122-plugins
 ```
+
+### Marketplace
+
+In an interactive Claude Code session, use this repository's actual marketplace name:
+
+```text
+/plugin marketplace add ratuhin1122/taintwatch
+/plugin install taintwatch@ratuhin1122-plugins
+/taintwatch:doctor
+```
+
+The install command opens the plugin panel; complete its installation flow. The equivalent public marketplace CLI registration and install were tested with Claude Code 2.1.175 in an isolated configuration. These forms follow the [official marketplace documentation](https://code.claude.com/docs/en/plugin-marketplaces). The source build above supplies the required binary on PATH. Hooks deliberately disable bootstrap downloads. Review plugin source and hook commands before enabling them; marketplace discovery is not a security endorsement. Do not enable both plugin and standalone wiring.
 
 ### Standalone hooks
 
@@ -141,10 +143,10 @@ Defaults below apply after session taint unless explicitly marked always. An ask
 | Git push, remote changes, PR/release creation | Ask | TW003 |
 | Recognized destructive shell/database commands | Ask | TW004 |
 | Writes to agent instructions, hook/workflow or sensitive configuration | Ask | TW005 |
-| Mutate Taintwatch policy, state, hooks or approvals | Ask, even when clean | TW006 |
+| Recognized changes to Taintwatch policy, state, hooks or approvals | Ask, even when clean | TW006 |
 | Recognized decode/download-and-execute shapes | Ask, even when clean | TW007 |
 | Unparseable or uncertain shell analysis | Ask | TW008 |
-| Reuse of an extracted untrusted value or supported encoding in an action | Ask; an allowed hostname alone is excluded | TW009 |
+| Reuse of an extracted untrusted value or supported encoding in a sensitive action | Ask; an allowed hostname alone is excluded | TW009 |
 | Ordinary development actions without a matched rule | Allow, subject to native permissions | — |
 
 ## What it does not protect
@@ -172,7 +174,7 @@ taintwatch policy check
 taintwatch policy show
 ```
 
-Layers are built-in defaults → user policy → nearest `.taintwatch/policy.yaml` walking up from cwd. Lists use explicit `append:` or `replace:`. A project policy can add restrictions, but loosening is ignored unless the **user** policy explicitly enables `allow_project_loosening`; an untrusted repository must not silently whitelist itself. See the [schema and examples](docs/policy.md).
+Layers are built-in defaults → user policy → nearest `.taintwatch/policy.yaml` walking up from cwd. Lists use explicit `append:` or `replace:`. The loader rejects recognized project-policy loosening unless the **user** policy enables `allow_project_loosening`. This guards configured fields; it is not a guarantee against every analysis bypass, resource failure, or change outside the hooks. See the [schema and examples](docs/policy.md).
 
 ## Commands
 
@@ -189,29 +191,29 @@ CLI commands below assume the binary is on PATH. Approval and clear commands cha
 | `taintwatch replay --log testdata/replay/audit.jsonl --policy testdata/replay/candidate.yaml` | Preview supported changes using the checked-in redacted sample log and candidate policy |
 | `taintwatch eval validate` / `taintwatch eval run --markdown` | Validate and evaluate the source checkout's corpus |
 
-Plugin shortcuts are `/taintwatch:status`, `/taintwatch:explain`, `/taintwatch:doctor`, and `/taintwatch:allow`. Permanent exceptions require confirmation; command-line automation must pass `--yes` explicitly. Replay only re-ranks compatible complete recorded snapshots for supported action/enabled overrides; it cannot reconstruct omitted raw inputs or simulate arbitrary matcher/source changes. See [replay limitations](docs/replay.md).
+Plugin shortcuts are `/taintwatch:status`, `/taintwatch:explain`, `/taintwatch:doctor`, and `/taintwatch:allow`. Permanent exceptions require confirmation; command-line automation must pass `--yes` explicitly. Replay only re-ranks compatible complete recorded snapshots for supported action/enabled overrides; it cannot reconstruct omitted raw inputs or simulate arbitrary matcher/source changes. See [replay limitations](docs/REPLAY.md).
 
 ## Evaluation
 
-Measured 2026-10-22, binary label `m4.2`, 50 maintainer-written synthetic scenarios: 20 attack and 30 benign, 116 hook events. These numbers describe behavior on known patterns, **not real-world coverage or an independent benchmark**.
+Measured 2026-10-23, binary label `stabilize`, 74 maintainer-written synthetic scenarios: 35 attacks and 39 benign, with 164 hook events. These numbers describe known patterns, **not real-world coverage or an independent benchmark**.
 
 | Metric | Measured result |
 | --- | ---: |
-| Eligible attack scenarios guarded (known misses excluded) | 17/17 (100.00%) |
-| Declared known-miss scenarios guarded | 2/3 |
-| Benign asks / benign pre-tool calls | 1 / 34 |
-| Asks per benign session | 0.0333 |
-| Asks per 100 benign pre-tool calls | 2.9412 |
-| Unexpected expectation failures | 1 |
-| Encoded telemetry: benign responses flagged / scanned | 0/30 (0.00%) |
+| Eligible attack scenarios guarded (known misses excluded) | 34/34 (100.00%) |
+| Declared known-miss scenarios guarded | 0/1 |
+| Benign asks / benign pre-tool calls | 0 / 43 |
+| Asks per benign session | 0.0000 |
+| Asks per 100 benign pre-tool calls | 0.0000 |
+| Unexpected expectation failures | 0 |
+| Encoded telemetry: benign responses flagged / scanned | 0/39 (0.00%) |
 
 Reproduce from the checkout root with this single command:
 
 ```sh
-make build VERSION=m4.2 && ./build/taintwatch version && ./build/taintwatch eval validate && ./build/taintwatch eval run --markdown
+make build VERSION=stabilize && ./build/taintwatch version && ./build/taintwatch eval validate && ./build/taintwatch eval run --markdown
 ```
 
-**Expected current exit: 1.** TW009 asks on a benign MCP-supplied `src/main.go` path; its allow expectation remains a failing gate rather than being relabeled. The encoded result includes zero decoded benign text blobs reaching heuristics, so it offers little evidence about false positives on encoded prose. [Full results, denominators, hashes, and known misses](docs/EVAL.md).
+Expected exit: 0. The remaining transformed-workflow miss is an expected failure. A fully caught scenario still labeled `known_miss` fails the gate and must have its label reviewed. Zero decoded benign text blobs reached the encoded heuristics, so the apparent flag rate provides little evidence about encoded prose. [Full results, denominators, hashes, and known misses](docs/EVAL.md).
 
 The [2026-10-23 hardening report](docs/HARDENING.md) records passing race/fuzz/static checks and remaining release gates. The large-state fixture still exceeds the 50 ms median latency target on three paths; v0.9.0 is recommended before v1.0.
 
@@ -262,7 +264,7 @@ No. It adds action-based checks above Claude Code's tool boundary; keep native p
 
 ### What happens if Taintwatch crashes?
 
-The default fail mode is open, so an internal failure may allow the action. Set `fail_mode: closed` to request approval on pre-hook failures; post-hooks cannot undo completed actions, and the prompt hook never blocks. A missing or bypassed hook cannot enforce either policy.
+The default fail mode is open, so an internal failure may allow the action. Pre-hook evaluation deadlines ask even in open mode. Lost post observations mark the session degraded when state is writable, so later sensitive actions ask. Set `fail_mode: closed` to request approval on other pre-hook failures; post-hooks cannot undo completed actions, and the prompt hook never blocks. A missing or bypassed hook cannot enforce either policy.
 
 ## Roadmap
 

@@ -25,6 +25,9 @@ Official marketplace instructions and the two related-project READMEs were read 
 
 ## Outstanding acceptance checks
 
-The interactive `/plugin marketplace add ratuhin1122/taintwatch`, `/plugin install taintwatch@ratuhin1122-plugins`, and `/taintwatch:doctor` were not entered into an authenticated live session. CLI equivalents and local packaging checks cannot prove their live behavior. Real hook payloads and tool-specific golden captures remain pending, as recorded in ASSUMPTIONS.md. An exact minimum Claude Code version and normal/tail hook latency remain unmeasured.
+The interactive `/plugin marketplace add ratuhin1122/taintwatch`, `/plugin install taintwatch@ratuhin1122-plugins`, and `/taintwatch:doctor` were not entered into an authenticated live session. CLI equivalents and local packaging checks cannot prove their live behavior. Real hook payloads and tool-specific golden captures remain pending, as recorded in ASSUMPTIONS.md. An exact minimum Claude Code version remains unverified. The later dated
+median/p99 measurements in [HARDENING.md](HARDENING.md) supersede the original
+unmeasured-performance note.
 
-Before claiming a complete first-time install in under five minutes: run the source quickstart on a machine with Linux/macOS Go installed, complete the interactive marketplace flow, verify actual hook delivery, and time the sequence. Configure the private security/moderation contacts, publish matching release assets/checksums if offering downloads, and resolve the documented failing eval gate. No release, settings change to the real user profile, or private reporting channel was published by this documentation task.
+Before claiming a complete first-time install in under five minutes: run the source quickstart on a machine with Linux/macOS Go installed, complete the interactive marketplace flow, verify actual hook delivery, and time the sequence. Configure the private security/moderation contacts, publish matching release assets/checksums if offering downloads, and verify the current eval gate. The stabilization run in [EVAL.md](EVAL.md)
+supersedes this document's historical failing-gate observation. No release, settings change to the real user profile, or private reporting channel was published by this documentation task.

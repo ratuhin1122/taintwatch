@@ -2,7 +2,8 @@
 
 ## Private reporting
 
-**Private reporting address placeholder: `SECURITY_CONTACT_NOT_CONFIGURED`.** This is not a mailbox. Maintainers must replace it with a monitored private address or enable and verify GitHub private vulnerability reporting before inviting sensitive submissions. Do not send reports to an inferred email address and do not publish secrets or exploit details in public issues. If a private route is unavailable, keep sensitive details private; a public request to establish a contact should contain no vulnerability details.
+**TODO for the maintainer before release: configure and verify a private reporting contact.**
+Current placeholder: `SECURITY_CONTACT_NOT_CONFIGURED`. This is not a mailbox. Maintainers must replace it with a monitored private address or enable and verify GitHub private vulnerability reporting before inviting sensitive submissions. Do not send reports to an inferred email address and do not publish secrets or exploit details in public issues. If a private route is unavailable, keep sensitive details private; a public request to establish a contact should contain no vulnerability details.
 
 ## Scope
 

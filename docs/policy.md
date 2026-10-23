@@ -110,8 +110,8 @@ Source/permission implications below can limit project replacements.
 
 A repository can ship its own policy. Letting it trust its own MCP server, allow
 an exfiltration domain, remove secret paths or disable a guard would let the
-untrusted content choose its own security boundary. Project files therefore cannot
-weaken the effective user policy unless the **user file** explicitly sets:
+untrusted content choose its own security boundary. The loader ignores recognized
+loosening of configured protections unless the **user file** explicitly sets:
 
 ```yaml
 version: 1
@@ -151,7 +151,10 @@ in hook diagnostics and audit metadata; `policy show/check` identify the key,
 file and line. A malformed project document is rejected as a whole: open hooks
 continue with the last valid policy, while closed pre hooks ask. Post hooks still
 track known taint using that last valid policy and supply advisory context. Bad
-repository YAML therefore cannot turn ordinary evaluation into a silent allow.
+repository YAML is not granted permission to disable guards. This is a field-level
+merge rule, not a guarantee that arbitrary repository content cannot evade analysis
+or cause an internal error. Fail mode, hook delivery, retention and analysis limits
+still matter; see [LIMITATIONS.md](LIMITATIONS.md).
 
 ## Field reference and defaults
 
@@ -190,7 +193,7 @@ not automatically tainted merely because those tools appear in sources.tools.
 Extra regexes search the tool name, raw Bash command, file path, or WebFetch URL.
 They **add** matches; they cannot narrow a built-in predicate. The rule's original
 `when` (tainted or always) still applies. Known IDs are TW001–TW009. TW009 asks on
-exact/encoded value provenance; see [VALUEMATCH.md](VALUEMATCH.md). All matching
+exact/encoded value provenance reused in a sensitive action; see [VALUEMATCH.md](VALUEMATCH.md). All matching
 enabled rules are considered: deny outranks ask, which outranks allow. Table order
 breaks ties, preserving M1 reasons. This avoids an early allow/ask override masking
 a later stronger rule. Allow means Taintwatch abstains; native Claude permissions
@@ -223,3 +226,15 @@ that its eventual filesystem destination will be writable.
 Session/policy/audit access remains bounded by the hook worker and final watchdog.
 Filesystem failures and timeouts can prevent a diagnostic or closed-mode response;
 see LIMITATIONS.md. Shell analysis and secret detection remain best-effort.
+
+
+## Supplemental regex bounds
+
+Extra patterns use Go RE2 and are compiled once during policy loading. Each pattern
+is capped at 2048 bytes; each document permits at most 16 patterns and 8192 total
+pattern bytes. Essential predicates run before supplemental matching. Matching
+examines the first 64 bytes of each tool name, raw Bash command, file path and URL;
+patterns depending on later bytes are outside this supplemental coverage. At most
+16 patterns are evaluated per decision; exhaustion asks conservatively and omits
+an incomplete replay snapshot. A pre-hook evaluation deadline asks even in open
+mode. These limits do not shorten the ordinary shell/path analysis input.

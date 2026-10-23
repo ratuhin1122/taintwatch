@@ -17,8 +17,8 @@ reasons include the latest recorded source tool and its UTC time.
 
 TW009 additionally names the matched indicator's source tool, which can differ
 from the latest taint event. It asks on exact and enumerated encoded matches in
-arguments; bare allowlisted hostnames alone are excluded. It can ask on benign
-source-file references. See [VALUEMATCH.md](VALUEMATCH.md) for bounds and gaps.
+sensitive-action arguments; bare allowlisted hostnames alone are excluded. Ordinary
+source reads and printed references do not ask solely because their path was supplied. See [VALUEMATCH.md](VALUEMATCH.md) for bounds and gaps.
 
 TW002 uses exact host matching, never domain suffix matching. Unknown destinations
 ask. Default allowed hosts are github.com, api.github.com, raw.githubusercontent.com,
@@ -65,7 +65,7 @@ measurement is deferred to M3, not inferred from the unit cases.
 
 Package manifests are protected conservatively even when the proposed content
 does not contain scripts. `truncate` asks for any operand unless a caller supplies
-a tracked-file list; hooks do not spawn Git. Self-protection covers conventional
+a tracked-file list; hooks do not spawn Git. Self-protection recognizes conventional
 Taintwatch paths, the actual state home, hook files and Claude settings. The
 shell file-operand extractors are conservative candidates, not syscall tracing.
 
@@ -77,7 +77,8 @@ output); the process watchdog is two seconds. A broken output pipe cannot
 reliably transmit an ask: closed pre-hooks use the documented blocking exit 2
 as a last resort, while open pre-hooks and all post-hooks exit 0. Until policy
 loading establishes a mode, timeout handling is conservative (closed), unless
-an explicit `--fail-mode open` was supplied. Performance
-has not been benchmarked against the under-50-ms target.
+an explicit `--fail-mode open` was supplied. Evaluation deadline expiry now asks
+even in open mode. Dated performance results are in [HARDENING.md](HARDENING.md);
+the large-state fixture missed the median target on several paths.
 
 See [LIMITATIONS.md](LIMITATIONS.md). Real Claude Code payload captures remain pending.

@@ -51,7 +51,9 @@ taintwatch clear --session SESSION_ID --reason "Reviewed the untrusted content"
 ```
 
 Without `--session`, clear selects the most recently updated persisted session.
-The mandatory reason is the explicit action; no hook clears automatically.
+The mandatory reason records explicit clearing. Successful tool responses do not
+clear taint. Lazy retention can delete an inactive tainted session after the
+configured interval (seven days by default); a later observation starts new state.
 Clear records the OS UID/username, not an invented Claude identity or a supplied
 `--who`. State stores the redacted reason, actor, and timestamp. Audit records
 `session.clear.requested` before changing state and `session.clear` afterward.
@@ -88,7 +90,9 @@ command explicitly before enabling hooks when a local binary is unavailable.
 
 | Error | Open | Closed |
 | --- | --- | --- |
-| Bad stdin, bad policy, unavailable state, argument errors, recovered panic, deadline | Pre abstains with `{}`; post emits no error context | Pre asks; post supplies advisory confirmation context |
+| Bad stdin, bad policy, unavailable state, argument errors, recovered panic | Pre abstains with `{}`; post emits no error context | Pre asks; post supplies advisory confirmation context |
+| Pre-hook evaluation deadline | Ask, including open mode | Ask |
+| Lost post observation | Persist degraded state if possible; later sensitive actions ask | Same, plus advisory context |
 | Shell syntax/size failure in a clean session | Pre abstains; post reports diagnostic | Pre asks; post supplies advisory context |
 | Unparseable shell in a tainted session | TW008 asks | TW008 asks |
 | Audit failure after detecting risk or a source | Known ask/deny or provenance context is retained | Known ask/deny or provenance context is retained |

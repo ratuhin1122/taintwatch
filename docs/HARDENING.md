@@ -1,5 +1,10 @@
 # Pre-v1.0 hardening report
 
+Historical M4.6 snapshot. The later stabilization changes resolved the benign
+eval mismatch; see [EVAL.md](EVAL.md) for current corpus results. The latency
+measurements below remain dated measurements of that earlier tree, not a fresh
+benchmark of the stabilization commit. Other release gates still apply.
+
 Date: 2026-10-23. Reviewed base: `c2a0a59`, plus the changes accompanying this
 report. Test host: Linux amd64 under WSL2 on Windows; Go 1.27.3, CGO enabled.
 This is a local engineering review, not an independent security audit.

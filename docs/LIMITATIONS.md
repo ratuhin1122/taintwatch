@@ -27,8 +27,7 @@ not establish that a session, command, document or destination is safe.
 - **Value provenance gaps.** TW009 matches exact indicators and a bounded set of
   encoded forms. Paraphrased, split or otherwise transformed values, nested
   encodings, unsupported formats and data beyond the retention/scan budgets can
-  evade it. Matches can also cause benign asks, including source files named by
-  an MCP search. Base64 interior cores can collide. This does not recover semantic
+  evade it. Matches in conservatively classified sensitive actions can still cause benign asks. Base64 interior cores can collide. This does not recover semantic
   equivalence or infer an application's eventual behavior. See
   [VALUEMATCH.md](VALUEMATCH.md).
 - **Allowlisted destinations can exfiltrate.** Host trust does not establish
@@ -93,3 +92,46 @@ not establish that a session, command, document or destination is safe.
   records and changed matching/source criteria are unreplayable; it does not
   reconstruct inputs or simulate downstream workflow changes. Missing information
   is reported as unreplayable, never unchanged. See [REPLAY.md](REPLAY.md).
+
+
+## Deferred integration gaps
+
+- **MCP action adapters:** generic MCP tool inputs are not mapped to Read/Write,
+  egress or shell action semantics. A filesystem MCP read of `.env` can evade
+  TW001 even though the preceding MCP result tainted the session.
+- **Trusted-MCP provenance:** `trusted_servers` matches a server name, not the
+  configuration provenance field. A project-supplied server reusing a trusted
+  name can suppress taint. Keep the list empty unless names/configuration are controlled.
+- **Launcher relative XDG paths:** the launcher can use a relative
+  `XDG_STATE_HOME`, while Go's state locator ignores it. A relative cache can be
+  repository-controlled. Use absolute state paths; this launcher inconsistency
+  remains unfixed.
+- **Launcher exit handling:** selecting a bundled/PATH/cached executable uses
+  `exec`; an invalid executable or nonzero exit can escape the launcher's
+  configured fail-mode output. Its checksum verification does not fix this exit
+  behavior. Go's hook timeout starts after entry into the binary.
+- **Bash dependency reads:** a command such as `cat node_modules/pkg/README.md`
+  does not taint solely because it reads a dependency path. Read-tool path
+  classification does not trace Bash filesystem reads.
+- **Self-protection is heuristic:** recognized mutation commands and path writes
+  ask under enabled default rules. Arbitrary interpreters, helper programs,
+  runtime path construction and renamed programs without a recognized argument
+  signature can evade it. It is not OS enforcement or authenticated user intent.
+
+## Observation loss and retention
+
+Failed post decoding, oversized inputs and internal failures attempt to persist a
+`degraded` flag. Later matched sensitive actions ask while it is present, and
+`status`/`explain` report why. Unknown session identity uses the global marker
+`__taintwatch_observation_loss__`; explicitly clear that marker with a reason
+after reviewing the incident. Successful results do not automatically repair it.
+If the filesystem itself is unavailable or the process is forcibly killed before
+persistence, the marker cannot be guaranteed. Open-mode errors outside the
+explicit deadline/degraded safeguards can still abstain.
+
+Lazy cleanup on writes removes inactive session files older than the configured
+retention (seven days by default), including tainted/degraded sessions. A later
+load is clean once the old file has expired. This is different from an explicit
+clear and does not preserve taint indefinitely. Before any post event persists a
+session, `status --session ID` can report `session not found` even if a pre-hook
+has written an audit observation.

@@ -61,7 +61,7 @@ The launcher fetches `https://github.com/ratuhin1122/taintwatch/releases/downloa
 
 ## Advisory security scans
 
-CI installs govulncheck v1.1.4 and gosec v2.29.0 in a separate read-only Ubuntu job. Both scans run against `./...` with a four-minute process limit, report their exit status/output in the job summary, and retain full output in the job log. Gosec excludes local tooling caches and generated build/dist directories. Exit 124 explicitly denotes timeout; it is not a clean scan. Findings, installation failures and missing scanners are advisory initially; a failure is never described as a clean scan. Scanner steps use `continue-on-error`, while the regular tests and eval gate remain blocking. Scanner modules are CI tools and are not product dependencies.
+CI installs govulncheck v1.9.0 and gosec v2.29.0 in a separate read-only Ubuntu job. Both scans run against `./...` with a four-minute process limit, report their exit status/output in the job summary, and retain full output in the job log. Gosec excludes local tooling caches and generated build/dist directories. Exit 124 explicitly denotes timeout; it is not a clean scan. Findings, installation failures and missing scanners are advisory initially; a failure is never described as a clean scan. Scanner steps use `continue-on-error`, while the regular tests and eval gate remain blocking. Scanner modules are CI tools and are not product dependencies.
 
 ## Sources
 
